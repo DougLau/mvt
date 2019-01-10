@@ -1,7 +1,5 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+// lib.rs      mvt crate.
+//
+// Copyright (c) 2019 Minnesota Department of Transportation
+//
+mod vector_tile;

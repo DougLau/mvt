@@ -5,3 +5,4 @@ authors = ["Douglas Lau <doug.lau@state.mn.us>"]
 edition = "2018"
 
 [dependencies]
+protobuf = "2.0"
