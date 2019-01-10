@@ -2,14 +2,30 @@
 //
 // Copyright (c) 2017-2018  Douglas P Lau
 //
+//! Basic 2D geometry -- Vec2 and Transform.
+//!
 use std::ops;
 
+/// 2-dimensional vector / point.
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub struct Vec2 {
     pub x: f64,
     pub y: f64,
 }
 
+/// An affine transform can translate, scale, rotate and skew 2D points.
+///
+/// A series of transforms can be combined into a single Transform struct.
+///
+/// # Example
+/// ```
+/// use mvt::Transform;
+/// const PI: f64 = std::f64::consts::PI;
+/// let t = Transform::new_translate(-50.0, -50.0)
+///                   .rotate(PI)
+///                   .translate(50.0, 50.0)
+///                   .scale(2.0, 2.0);
+/// ```
 #[derive(Clone,Copy,Debug,PartialEq)]
 pub struct Transform {
     e: [f64; 6],
@@ -42,6 +58,7 @@ impl ops::Mul<f64> for Vec2 {
 impl ops::Mul for Vec2 {
     type Output = f64;
 
+    /// Calculate the cross product of two Vec2
     fn mul(self, other: Self) -> f64 {
         self.x * other.y - self.y * other.x
     }
@@ -64,15 +81,19 @@ impl ops::Neg for Vec2 {
 }
 
 impl Vec2 {
+    /// Create a new Vec2
     pub fn new(x: f64, y: f64) -> Self {
         Vec2 { x, y }
     }
+    /// Create a zero Vec2
     pub fn zero() -> Self {
         Vec2::new(0.0, 0.0)
     }
+    /// Get the magnitude of a Vec2
     pub fn mag(self) -> f64 {
         self.x.hypot(self.y)
     }
+    /// Create a copy normalized to unit length
     pub fn normalize(self) -> Self {
         let m = self.mag();
         if m > 0.0 {
@@ -81,11 +102,13 @@ impl Vec2 {
             Vec2::zero()
         }
     }
+    /// Calculate the distance squared between two Vec2
     pub fn dist_sq(self, other: Self) -> f64 {
         let dx = self.x - other.x;
         let dy = self.y - other.y;
         dx * dx + dy * dy
     }
+    /// Calculate the distance between two Vec2
     pub fn dist(self, other: Self) -> f64 {
         self.dist_sq(other).sqrt()
     }
@@ -117,12 +140,14 @@ impl ops::Mul<Vec2> for Transform {
 }
 
 impl Transform {
+    /// Create a new identity transform.
     pub fn new() -> Self {
         Transform {
             e: [1.0, 0.0, 0.0,
                 0.0, 1.0, 0.0]
         }
     }
+    /// Multiple two affine transforms.
     fn mul_e(&self, other: &Self) -> [f64; 6] {
         let mut e = [0.0; 6];
         e[0] = self.e[0] * other.e[0] + self.e[3] * other.e[1];
@@ -133,18 +158,29 @@ impl Transform {
         e[5] = self.e[2] * other.e[3] + self.e[5] * other.e[4] + other.e[5];
         e
     }
+    /// Create a new translation transform.
+    ///
+    /// * `tx` Amount to translate X.
+    /// * `ty` Amount to translate Y.
     pub fn new_translate(tx: f64, ty: f64) -> Self {
         Transform {
             e: [1.0, 0.0,  tx,
                 0.0, 1.0,  ty]
         }
     }
+    /// Create a new scale transform.
+    ///
+    /// * `sx` Scale factor for X dimension.
+    /// * `sy` Scale factor for Y dimension.
     pub fn new_scale(sx: f64, sy: f64) -> Self {
         Transform {
             e: [ sx, 0.0, 0.0,
                 0.0,  sy, 0.0]
         }
     }
+    /// Create a new rotation transform.
+    ///
+    /// * `th` Angle to rotate coordinates (radians).
     pub fn new_rotate(th: f64) -> Self {
         let sn = th.sin();
         let cs = th.cos();
@@ -153,6 +189,10 @@ impl Transform {
                  sn,  cs, 0.0]
         }
     }
+    /// Create a new skew transform.
+    ///
+    /// * `ax` Angle to skew X-axis (radians).
+    /// * `ay` Angle to skew Y-axis (radians).
     pub fn new_skew(ax: f64, ay: f64) -> Self {
         let tnx = ax.tan();
         let tny = ay.tan();
@@ -161,18 +201,33 @@ impl Transform {
                 tny, 1.0, 0.0]
         }
     }
+    /// Apply translation to a transform.
+    ///
+    /// * `tx` Amount to translate X.
+    /// * `ty` Amount to translate Y.
     pub fn translate(mut self, tx: f64, ty: f64) -> Self {
         self *= Transform::new_translate(tx, ty);
         self
     }
+    /// Apply scaling to a transform.
+    ///
+    /// * `sx` Scale factor for X dimension.
+    /// * `sy` Scale factor for Y dimension.
     pub fn scale(mut self, sx: f64, sy: f64) -> Self {
         self *= Transform::new_scale(sx, sy);
         self
     }
+    /// Apply rotation to a transform.
+    ///
+    /// * `th` Angle to rotate coordinates (radians).
     pub fn rotate(mut self, th: f64) -> Self {
         self *= Transform::new_rotate(th);
         self
     }
+    /// Apply skew to a transform.
+    ///
+    /// * `ax` Angle to skew X-axis (radians).
+    /// * `ay` Angle to skew Y-axis (radians).
     pub fn skew(mut self, ax: f64, ay: f64) -> Self {
         self *= Transform::new_skew(ax, ay);
         self
