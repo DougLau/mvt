@@ -152,3 +152,76 @@ impl GeomEncoder {
         self.data
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    // Examples from MVT spec:
+    #[test]
+    fn test_point() {
+        let mut pe = GeomEncoder::new(GeomType::Point, Transform::new());
+        pe.add_point(25.0, 17.0);
+        let b = pe.to_vec();
+        assert_eq!(b, vec!(9, 50, 34));
+    }
+    #[test]
+    fn test_multipoint() {
+        let mut pe = GeomEncoder::new(GeomType::Point, Transform::new());
+        pe.add_point(5.0, 7.0);
+        pe.add_point(3.0, 2.0);
+        let b = pe.to_vec();
+        assert_eq!(b, vec!(17, 10, 14, 3, 9));
+    }
+    #[test]
+    fn test_linestring() {
+        let mut le = GeomEncoder::new(GeomType::Linestring, Transform::new());
+        le.add_point(2.0, 2.0);
+        le.add_point(2.0, 10.0);
+        le.add_point(10.0, 10.0);
+        let b = le.to_vec();
+        assert_eq!(b, vec!(9, 4, 4, 18, 0, 16, 16, 0));
+    }
+    #[test]
+    fn test_multilinestring() {
+        let mut le = GeomEncoder::new(GeomType::Linestring, Transform::new());
+        le.add_point(2.0, 2.0);
+        le.add_point(2.0, 10.0);
+        le.add_point(10.0, 10.0);
+        le.complete_geom();
+        le.add_point(1.0, 1.0);
+        le.add_point(3.0, 5.0);
+        let b = le.to_vec();
+        assert_eq!(b, vec!(9, 4, 4, 18, 0, 16, 16, 0, 9, 17, 17, 10, 4, 8));
+    }
+    #[test]
+    fn test_polygon() {
+        let mut pe = GeomEncoder::new(GeomType::Polygon, Transform::new());
+        pe.add_point(3.0, 6.0);
+        pe.add_point(8.0, 12.0);
+        pe.add_point(20.0, 34.0);
+        let b = pe.to_vec();
+        assert_eq!(b, vec!(9, 6, 12, 18, 10, 12, 24, 44, 15));
+    }
+    #[test]
+    fn test_multipolygon() {
+        let mut pe = GeomEncoder::new(GeomType::Polygon, Transform::new());
+        pe.add_point(0.0, 0.0);
+        pe.add_point(10.0, 0.0);
+        pe.add_point(10.0, 10.0);
+        pe.add_point(0.0, 10.0);
+        pe.complete_geom(); // positive area => exterior ring
+        pe.add_point(11.0, 11.0);
+        pe.add_point(20.0, 11.0);
+        pe.add_point(20.0, 20.0);
+        pe.add_point(11.0, 20.0);
+        pe.complete_geom(); // positive area => exterior ring
+        pe.add_point(13.0, 13.0);
+        pe.add_point(13.0, 17.0);
+        pe.add_point(17.0, 17.0);
+        pe.add_point(17.0, 13.0);
+        let b = pe.to_vec(); // negative area => interior ring
+        assert_eq!(b, vec!(9, 0, 0, 26, 20, 0, 0, 20, 19, 0, 15, 9, 22, 2, 26,
+                           18, 0, 0, 18, 17, 0, 15, 9, 4, 13, 26, 0, 8, 8, 0, 0,
+                           7, 15));
+    }
+}
