@@ -2,6 +2,8 @@
 //
 // Copyright (c) 2019 Minnesota Department of Transportation
 //
+//! A library for encoding [mapbox vector tiles](https://github.com/mapbox/vector-tile-spec)
+//! (MVT).  Version 2.1 of the standard is supported.
 #[macro_use]
 extern crate log;
 

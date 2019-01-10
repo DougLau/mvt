@@ -28,12 +28,41 @@ pub enum Error {
 
 /// A tile represents a rectangular region of a map at a particular zoom level.
 /// Each tile can contain any number of [layers](struct.Layer.html).
+///
+/// # Example
+/// ```
+/// # use mvt::Error;
+/// # fn main() -> Result<(), Error> {
+///       use mvt::Tile;
+///       let mut tile = Tile::new(2048);
+///       let layer = tile.create_layer("First Layer");
+///       // ...
+///       // set up the layer
+///       // ...
+///       tile.add_layer(layer)?;
+///       // ...
+///       // add more layers
+///       // ...
+///       let data = tile.to_bytes()?;
+/// #     Ok(())
+/// # }
+/// ```
 pub struct Tile {
     vec_tile: VecTile,
     extent: u32,
 }
 
 /// A layer is a set of related features in a tile.
+///
+/// # Example
+/// ```
+/// use mvt::Tile;
+/// let mut tile = Tile::new(2048);
+/// let layer = tile.create_layer("First Layer");
+/// // ...
+/// // set up the layer
+/// // ...
+/// ```
 pub struct Layer {
     layer: Tile_Layer,
 }
@@ -44,6 +73,23 @@ pub struct Layer {
 /// [Layer.into_feature](struct.Layer.html#method.into_feature).
 /// After optionally adding an ID and tags, retrieve the Layer with the Feature
 /// added by calling [Feature.into_layer](struct.Feature.html#method.into_layer).
+///
+/// # Example
+/// ```
+/// # use mvt::Error;
+/// # fn main() -> Result<(), Error> {
+///       use mvt::{GeomEncoder,GeomType,Tile,Transform};
+///       let mut tile = Tile::new(2048);
+///       let layer = tile.create_layer("First Layer");
+///       let encoder = GeomEncoder::new(GeomType::Linestring, Transform::new());
+///       let feature = layer.into_feature(encoder);
+///       // ...
+///       // add any tags or ID to the feature
+///       // ...
+///       let layer = feature.into_layer();
+/// #     Ok(())
+/// # }
+/// ```
 pub struct Feature {
     feature: Tile_Feature,
     layer: Layer,

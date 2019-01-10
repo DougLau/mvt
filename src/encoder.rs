@@ -36,6 +36,16 @@ pub enum GeomType {
 }
 
 /// Encoder for Point, Linestring or Polygon geometry.
+///
+/// # Example
+/// ```
+/// use mvt::{GeomEncoder,GeomType,Transform};
+/// let mut encoder = GeomEncoder::new(GeomType::Point, Transform::new());
+/// encoder.add_point(0.0, 0.0);
+/// encoder.add_point(10.0, 0.0);
+/// // ...
+/// // create a feature
+/// ```
 pub struct GeomEncoder {
     geom_tp: GeomType,
     transform: Transform,
