@@ -2,7 +2,12 @@
 //
 // Copyright (c) 2019 Minnesota Department of Transportation
 //
+#[macro_use]
+extern crate log;
+
+mod encoder;
 mod geom;
 mod vector_tile;
 
+pub use crate::encoder::{GeomEncoder,GeomType};
 pub use crate::geom::Transform;
