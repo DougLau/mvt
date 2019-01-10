@@ -2,6 +2,8 @@
 //
 // Copyright (c) 2019 Minnesota Department of Transportation
 //
+//! Encoder for Mapbox Vector Tile (MVT) geometry.
+//!
 use std::vec::Vec;
 
 use crate::geom::{Transform,Vec2};
@@ -22,13 +24,18 @@ struct ParamInt {
     value: i32,
 }
 
+/// Geometry types for [Features](struct.Feature.html).
 #[derive(Clone,Debug)]
 pub enum GeomType {
+    /// Point or multipoint
     Point,
+    /// Linestring or Multilinestring
     Linestring,
+    /// Polygon or Multipolygon
     Polygon,
 }
 
+/// Encoder for Point, Linestring or Polygon geometry.
 pub struct GeomEncoder {
     geom_tp: GeomType,
     transform: Transform,
@@ -58,6 +65,10 @@ impl ParamInt {
 }
 
 impl GeomEncoder {
+    /// Create a new geometry encoder.
+    ///
+    /// * `geom_tp` Geometry type.
+    /// * `transform` Transform to apply to geometry.
     pub fn new(geom_tp: GeomType, transform: Transform) -> Self {
         GeomEncoder {
             geom_tp,
@@ -70,21 +81,25 @@ impl GeomEncoder {
         }
     }
 
+    /// Get the geometry type
     pub(crate) fn geom_type(&self) -> GeomType {
         self.geom_tp.clone()
     }
 
+    /// Add a Command
     fn command(&mut self, cmd: Command, count: u32) {
         self.cmd_offset = self.data.len();
         debug!("command: {:?}", &cmd);
         self.data.push(CommandInt::new(cmd, count).encode());
     }
 
+    /// Set count of the most recent Command.
     fn set_command(&mut self, cmd: Command, count: u32) {
         let off = self.cmd_offset;
         self.data[off] = CommandInt::new(cmd, count).encode();
     }
 
+    /// Encode one point with relative coörindates.
     fn encode_point(&mut self, x: f64, y: f64) {
         let p = self.transform * Vec2::new(x, y);
         let x = p.x as i32;
@@ -96,6 +111,7 @@ impl GeomEncoder {
         self.y = y;
     }
 
+    /// Add a point.
     pub fn add_point(&mut self, x: f64, y: f64) {
         match self.geom_tp {
             GeomType::Point => {
@@ -122,6 +138,7 @@ impl GeomEncoder {
         self.count += 1;
     }
 
+    /// Complete the current geometry (for multilinestring / multipolygon).
     pub fn complete_geom(&mut self) {
         match self.geom_tp {
             GeomType::Point => (),
@@ -141,6 +158,7 @@ impl GeomEncoder {
         }
     }
 
+    /// Get the encoded data.
     pub(crate) fn to_vec(mut self) -> Vec<u32> {
         if let GeomType::Point = self.geom_tp {
             if self.count > 1 {
