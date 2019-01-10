@@ -178,3 +178,70 @@ impl Transform {
         self
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::f64;
+    #[test]
+    fn test_vec2() {
+        let a = Vec2::new(2.0, 1.0);
+        let b = Vec2::new(3.0, 4.0);
+        assert_eq!(a + b, Vec2::new(5.0, 5.0));
+        assert_eq!(b - a, Vec2::new(1.0, 3.0));
+        assert_eq!(a * 2.0, Vec2::new(4.0, 2.0));
+        assert_eq!(a / 2.0, Vec2::new(1.0, 0.5));
+        assert_eq!(-a, Vec2::new(-2.0, -1.0));
+        assert_eq!(b.mag(), 5.0);
+        assert_eq!(a.dist_sq(b), 10.0);
+        assert_eq!(b.dist(Vec2::new(0.0, 0.0)), 5.0);
+    }
+    #[test]
+    fn test_identity() {
+        assert_eq!(Transform::new().e,
+                   [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
+        assert_eq!((Transform::new() * Transform::new()).e,
+                   [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
+        assert_eq!(Transform::new() * Vec2::new(1.0, 2.0),
+                   Vec2::new(1.0, 2.0));
+    }
+    #[test]
+    fn test_translate() {
+        assert_eq!(Transform::new_translate(1.5, -1.5).e,
+                   [1.0, 0.0, 1.5, 0.0, 1.0, -1.5]);
+        assert_eq!(Transform::new().translate(2.5, -3.5).e,
+                   [1.0, 0.0, 2.5, 0.0, 1.0, -3.5]);
+        assert_eq!(Transform::new().translate(5.0, 7.0) * Vec2::new(1.0, -2.0),
+                   Vec2::new(6.0, 5.0));
+    }
+    #[test]
+    fn test_scale() {
+        assert_eq!(Transform::new_scale(2.0, 4.0).e,
+                   [2.0, 0.0, 0.0, 0.0, 4.0, 0.0]);
+        assert_eq!(Transform::new().scale(3.0, 5.0).e,
+                   [3.0, 0.0, 0.0, 0.0, 5.0, 0.0]);
+        assert_eq!(Transform::new().scale(2.0, 3.0) * Vec2::new(1.5, -2.0),
+                   Vec2::new(3.0, -6.0));
+    }
+    #[test]
+    fn test_skew() {
+        const PI: f64 = f64::consts::PI;
+        assert_eq!(Transform::new().skew(0.0, PI / 4.0) * Vec2::new(15.0, 7.0),
+                   Vec2::new(15.0, 22.0));
+    }
+    #[test]
+    fn test_transform() {
+        assert_eq!((Transform::new_translate(1.0, 2.0) *
+                    Transform::new_scale(2.0, 2.0)).e,
+                   [2.0, 0.0, 2.0, 0.0, 2.0, 4.0]);
+        assert_eq!(Transform::new_translate(3.0, 5.0) *
+                   Transform::new_scale(7.0, 11.0) *
+                   Transform::new_rotate(f64::consts::PI / 2.0) *
+                   Transform::new_skew(1.0, -2.0),
+                   Transform::new()
+                             .translate(3.0, 5.0)
+                             .scale(7.0, 11.0)
+                             .rotate(f64::consts::PI / 2.0)
+                             .skew(1.0, -2.0));
+    }
+}
