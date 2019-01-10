@@ -1,0 +1,180 @@
+// geom.rs
+//
+// Copyright (c) 2017-2018  Douglas P Lau
+//
+use std::ops;
+
+#[derive(Clone,Copy,Debug,PartialEq)]
+pub struct Vec2 {
+    pub x: f64,
+    pub y: f64,
+}
+
+#[derive(Clone,Copy,Debug,PartialEq)]
+pub struct Transform {
+    e: [f64; 6],
+}
+
+impl ops::Add for Vec2 {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        Vec2::new(self.x + other.x, self.y + other.y)
+    }
+}
+
+impl ops::Sub for Vec2 {
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self{
+        Vec2::new(self.x - other.x, self.y - other.y)
+    }
+}
+
+impl ops::Mul<f64> for Vec2 {
+    type Output = Self;
+
+    fn mul(self, s: f64) -> Self {
+        Vec2::new(self.x * s, self.y * s)
+    }
+}
+
+impl ops::Mul for Vec2 {
+    type Output = f64;
+
+    fn mul(self, other: Self) -> f64 {
+        self.x * other.y - self.y * other.x
+    }
+}
+
+impl ops::Div<f64> for Vec2 {
+    type Output = Self;
+
+    fn div(self, s: f64) -> Self {
+        Vec2::new(self.x / s, self.y / s)
+    }
+}
+
+impl ops::Neg for Vec2 {
+    type Output = Self;
+
+    fn neg(self) -> Self {
+        Vec2::new(-self.x, -self.y)
+    }
+}
+
+impl Vec2 {
+    pub fn new(x: f64, y: f64) -> Self {
+        Vec2 { x, y }
+    }
+    pub fn zero() -> Self {
+        Vec2::new(0.0, 0.0)
+    }
+    pub fn mag(self) -> f64 {
+        self.x.hypot(self.y)
+    }
+    pub fn normalize(self) -> Self {
+        let m = self.mag();
+        if m > 0.0 {
+            self / m
+        } else {
+            Vec2::zero()
+        }
+    }
+    pub fn dist_sq(self, other: Self) -> f64 {
+        let dx = self.x - other.x;
+        let dy = self.y - other.y;
+        dx * dx + dy * dy
+    }
+    pub fn dist(self, other: Self) -> f64 {
+        self.dist_sq(other).sqrt()
+    }
+}
+
+impl ops::MulAssign for Transform {
+    fn mul_assign(&mut self, other: Self) {
+        self.e = self.mul_e(&other);
+    }
+}
+
+impl ops::Mul for Transform {
+    type Output = Self;
+
+    fn mul(self, other: Self) -> Self {
+        let e = self.mul_e(&other);
+        Transform { e }
+    }
+}
+
+impl ops::Mul<Vec2> for Transform {
+    type Output = Vec2;
+
+    fn mul(self, s: Vec2) -> Vec2 {
+        let x = self.e[0] * s.x + self.e[1] * s.y + self.e[2];
+        let y = self.e[3] * s.x + self.e[4] * s.y + self.e[5];
+        Vec2::new(x, y)
+    }
+}
+
+impl Transform {
+    pub fn new() -> Self {
+        Transform {
+            e: [1.0, 0.0, 0.0,
+                0.0, 1.0, 0.0]
+        }
+    }
+    fn mul_e(&self, other: &Self) -> [f64; 6] {
+        let mut e = [0.0; 6];
+        e[0] = self.e[0] * other.e[0] + self.e[3] * other.e[1];
+        e[1] = self.e[1] * other.e[0] + self.e[4] * other.e[1];
+        e[2] = self.e[2] * other.e[0] + self.e[5] * other.e[1] + other.e[2];
+        e[3] = self.e[0] * other.e[3] + self.e[3] * other.e[4];
+        e[4] = self.e[1] * other.e[3] + self.e[4] * other.e[4];
+        e[5] = self.e[2] * other.e[3] + self.e[5] * other.e[4] + other.e[5];
+        e
+    }
+    pub fn new_translate(tx: f64, ty: f64) -> Self {
+        Transform {
+            e: [1.0, 0.0,  tx,
+                0.0, 1.0,  ty]
+        }
+    }
+    pub fn new_scale(sx: f64, sy: f64) -> Self {
+        Transform {
+            e: [ sx, 0.0, 0.0,
+                0.0,  sy, 0.0]
+        }
+    }
+    pub fn new_rotate(th: f64) -> Self {
+        let sn = th.sin();
+        let cs = th.cos();
+        Transform {
+            e: [ cs, -sn, 0.0,
+                 sn,  cs, 0.0]
+        }
+    }
+    pub fn new_skew(ax: f64, ay: f64) -> Self {
+        let tnx = ax.tan();
+        let tny = ay.tan();
+        Transform {
+            e: [1.0, tnx, 0.0,
+                tny, 1.0, 0.0]
+        }
+    }
+    pub fn translate(mut self, tx: f64, ty: f64) -> Self {
+        self *= Transform::new_translate(tx, ty);
+        self
+    }
+    pub fn scale(mut self, sx: f64, sy: f64) -> Self {
+        self *= Transform::new_scale(sx, sy);
+        self
+    }
+    pub fn rotate(mut self, th: f64) -> Self {
+        self *= Transform::new_rotate(th);
+        self
+    }
+    pub fn skew(mut self, ax: f64, ay: f64) -> Self {
+        self *= Transform::new_skew(ax, ay);
+        self
+    }
+}
