@@ -2,6 +2,11 @@
 name = "mvt"
 version = "0.1.0"
 authors = ["Douglas Lau <doug.lau@state.mn.us>"]
+description = "A library for encoding mapbox vector tiles"
+license = "MIT/Apache-2.0"
+documentation = "https://docs.rs/mvt"
+homepage = "https://githum.com/DougLau/mvt"
+repository = "https://githum.com/DougLau/mvt"
 edition = "2018"
 
 [dependencies]
