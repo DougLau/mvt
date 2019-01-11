@@ -4,16 +4,16 @@
 //
 //! Tile, Layer and Feature structs.
 //!
-use protobuf::Message;
 use protobuf::error::ProtobufError;
 use protobuf::stream::CodedOutputStream;
+use protobuf::Message;
 use std::fmt;
 use std::io::Write;
 use std::vec::Vec;
 
-use crate::encoder::{GeomEncoder,GeomType};
+use crate::encoder::{GeomEncoder, GeomType};
 use crate::vector_tile::Tile as VecTile;
-use crate::vector_tile::{Tile_Feature,Tile_GeomType,Tile_Layer,Tile_Value};
+use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
 
 /// MVT Error types
 #[derive(Debug)]
@@ -146,9 +146,11 @@ impl Tile {
     ///
     /// Returns an error if a layer with the same name already exists.
     pub fn add_layer(&mut self, layer: Layer) -> Result<(), Error> {
-        if self.vec_tile.get_layers()
-                        .iter()
-                        .any({|n| n.get_name() == layer.layer.get_name()})
+        if self
+            .vec_tile
+            .get_layers()
+            .iter()
+            .any({ |n| n.get_name() == layer.layer.get_name() })
         {
             Err(Error::DuplicateName())
         } else {
@@ -209,38 +211,40 @@ impl Layer {
         };
         feature.set_field_type(geom_tp);
         feature.set_geometry(encoder.to_vec());
-        Feature { feature, layer: self }
+        Feature {
+            feature,
+            layer: self,
+        }
     }
 
     /// Get position of a key in the layer keys.  If the key is not found, it
     /// is added as the last key.
     fn key_pos(&mut self, key: &str) -> usize {
-        self.layer.get_keys()
-                  .iter()
-                  .position(|k| *k == key)
-                  .unwrap_or_else(||
-        {
-            self.layer.mut_keys().push(key.to_string());
-            self.layer.get_keys().len() - 1
-        })
+        self.layer
+            .get_keys()
+            .iter()
+            .position(|k| *k == key)
+            .unwrap_or_else(|| {
+                self.layer.mut_keys().push(key.to_string());
+                self.layer.get_keys().len() - 1
+            })
     }
 
     /// Get position of a value in the layer values.  If the value is not found,
     /// it is added as the last value.
     fn val_pos(&mut self, value: Tile_Value) -> usize {
-        self.layer.get_values()
-                  .iter()
-                  .position(|v| *v == value)
-                  .unwrap_or_else(||
-        {
-            self.layer.mut_values().push(value);
-            self.layer.get_values().len() - 1
-        })
+        self.layer
+            .get_values()
+            .iter()
+            .position(|v| *v == value)
+            .unwrap_or_else(|| {
+                self.layer.mut_values().push(value);
+                self.layer.get_values().len() - 1
+            })
     }
 }
 
 impl Feature {
-
     /// Complete the feature, returning ownership of the layer.
     pub fn into_layer(mut self) -> Layer {
         self.layer.layer.mut_features().push(self.feature);
@@ -249,9 +253,12 @@ impl Feature {
 
     /// Set the feature ID.
     pub fn set_id(&mut self, id: u64) -> Result<(), Error> {
-        if self.layer.layer.get_features()
-                           .iter()
-                           .any({|f| f.get_id() == id})
+        if self
+            .layer
+            .layer
+            .get_features()
+            .iter()
+            .any({ |f| f.get_id() == id })
         {
             Err(Error::DuplicateId())
         } else {

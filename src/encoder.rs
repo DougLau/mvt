@@ -6,9 +6,9 @@
 //!
 use std::vec::Vec;
 
-use crate::geom::{Transform,Vec2};
+use crate::geom::{Transform, Vec2};
 
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 enum Command {
     MoveTo = 1,
     LineTo = 2,
@@ -25,7 +25,7 @@ struct ParamInt {
 }
 
 /// Geometry types for [Features](struct.Feature.html).
-#[derive(Clone,Debug)]
+#[derive(Clone, Debug)]
 pub enum GeomType {
     /// Point or multipoint
     Point,
@@ -87,7 +87,7 @@ impl GeomEncoder {
             y: 0,
             count: 0,
             cmd_offset: 0,
-            data: vec!(),
+            data: vec![],
         }
     }
 
@@ -114,8 +114,10 @@ impl GeomEncoder {
         let p = self.transform * Vec2::new(x, y);
         let x = p.x as i32;
         let y = p.y as i32;
-        self.data.push(ParamInt::new(x.saturating_sub(self.x)).encode());
-        self.data.push(ParamInt::new(y.saturating_sub(self.y)).encode());
+        self.data
+            .push(ParamInt::new(x.saturating_sub(self.x)).encode());
+        self.data
+            .push(ParamInt::new(y.saturating_sub(self.y)).encode());
         debug!("point: {},{}", x, y);
         self.x = x;
         self.y = y;
@@ -128,20 +130,16 @@ impl GeomEncoder {
                 if self.count == 0 {
                     self.command(Command::MoveTo, 1);
                 }
+            }
+            GeomType::Linestring => match self.count {
+                0 => self.command(Command::MoveTo, 1),
+                1 => self.command(Command::LineTo, 1),
+                _ => (),
             },
-            GeomType::Linestring => {
-                match self.count {
-                    0 => self.command(Command::MoveTo, 1),
-                    1 => self.command(Command::LineTo, 1),
-                    _ => (),
-                }
-            },
-            GeomType::Polygon => {
-                match self.count {
-                    0 => self.command(Command::MoveTo, 1),
-                    1 => self.command(Command::LineTo, 1),
-                    _ => (),
-                }
+            GeomType::Polygon => match self.count {
+                0 => self.command(Command::MoveTo, 1),
+                1 => self.command(Command::LineTo, 1),
+                _ => (),
             },
         }
         self.encode_point(x, y);
@@ -157,14 +155,14 @@ impl GeomEncoder {
                     self.set_command(Command::LineTo, self.count - 1);
                 }
                 self.count = 0;
-            },
+            }
             GeomType::Polygon => {
                 if self.count > 1 {
                     self.set_command(Command::LineTo, self.count - 1);
                     self.command(Command::ClosePath, 1);
                 }
                 self.count = 0;
-            },
+            }
         }
     }
 
@@ -248,8 +246,12 @@ mod test {
         pe.add_point(17.0, 17.0);
         pe.add_point(17.0, 13.0);
         let b = pe.to_vec(); // negative area => interior ring
-        assert_eq!(b, vec!(9, 0, 0, 26, 20, 0, 0, 20, 19, 0, 15, 9, 22, 2, 26,
-                           18, 0, 0, 18, 17, 0, 15, 9, 4, 13, 26, 0, 8, 8, 0, 0,
-                           7, 15));
+        assert_eq!(
+            b,
+            vec!(
+                9, 0, 0, 26, 20, 0, 0, 20, 19, 0, 15, 9, 22, 2, 26, 18, 0, 0, 18, 17, 0, 15, 9, 4,
+                13, 26, 0, 8, 8, 0, 0, 7, 15
+            )
+        );
     }
 }
