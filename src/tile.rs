@@ -22,6 +22,8 @@ pub enum Error {
     DuplicateName(),
     /// The layer already contains a feature with the specified ID.
     DuplicateId(),
+    /// The layer extent does not match the tile extent.
+    WrongExtent(),
     /// Error while encoding data.
     Protobuf(ProtobufError),
 }
@@ -100,6 +102,7 @@ impl fmt::Display for Error {
         match self {
             Error::DuplicateName() => write!(f, "Name already exists"),
             Error::DuplicateId() => write!(f, "ID already exists"),
+            Error::WrongExtent() => write!(f, "Wrong layer extent"),
             Error::Protobuf(_) => write!(f, "Error encoding MVT data"),
         }
     }
@@ -144,8 +147,13 @@ impl Tile {
     ///
     /// * `layer` The layer.
     ///
-    /// Returns an error if a layer with the same name already exists.
+    /// Returns an error if:
+    /// * a layer with the same name already exists
+    /// * the layer extent does not match the tile extent
     pub fn add_layer(&mut self, layer: Layer) -> Result<(), Error> {
+        if layer.layer.get_extent() != self.extent {
+            return Err(Error::WrongExtent());
+        }
         if self
             .vec_tile
             .get_layers()
