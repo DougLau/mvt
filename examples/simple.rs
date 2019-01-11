@@ -1,10 +1,3 @@
-# mvt
-A library for encoding [mapbox vector tiles](https://github.com/mapbox/vector-tile-spec)
-(MVT).  Version 2.1 of the standard is supported.
-
-## Example
-
-```rust
 use mvt::{Error,GeomEncoder,GeomType,Tile,Transform};
 
 fn main() -> Result<(), Error> {
@@ -25,11 +18,3 @@ fn main() -> Result<(), Error> {
     println!("encoded {} bytes: {:?}", data.len(), data);
     Ok(())
 }
-```
-
-## Alternatives
-
-These are other rust projects with MVT support:
-* [hecate](https://crates.io/crates/hecate)
-* [t-rex](https://t-rex.tileserver.ch/)
-* [vectortile](https://crates.io/crates/vectortile)
