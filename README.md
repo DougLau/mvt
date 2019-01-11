@@ -2,6 +2,9 @@
 A library for encoding [mapbox vector tiles](https://github.com/mapbox/vector-tile-spec)
 (MVT).  Version 2.1 of the standard is supported.
 
+The API is designed to prevent creating files which are not allowed by the
+specification.
+
 ## Example
 
 ```rust

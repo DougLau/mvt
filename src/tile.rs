@@ -14,8 +14,11 @@ use crate::encoder::{GeomData, GeomType};
 use crate::vector_tile::Tile as VecTile;
 use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
 
-/// A tile represents a rectangular region of a map at a particular zoom level.
+/// A tile represents a rectangular region of a map.
 /// Each tile can contain any number of [layers](struct.Layer.html).
+/// When all layers have been added to the tile, it can be
+/// [written out](struct.Tile.html#method.write_to) or
+/// [converted](struct.Tile.html#method.to_bytes) to a Vec<u8>.
 ///
 /// # Example
 /// ```
