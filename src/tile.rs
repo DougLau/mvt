@@ -181,14 +181,14 @@ impl Tile {
 
     /// Encode the tile and return the bytes.
     pub fn to_bytes(&self) -> Result<Vec<u8>, Error> {
-        let mut v = Vec::with_capacity(self.compute_size() as usize);
+        let mut v = Vec::with_capacity(self.compute_size());
         self.write_to(&mut v)?;
         Ok(v)
     }
 
     /// Compute the encoded size in bytes.
-    pub fn compute_size(&self) -> u32 {
-        self.vec_tile.compute_size()
+    fn compute_size(&self) -> usize {
+        self.vec_tile.compute_size() as usize
     }
 }
 
