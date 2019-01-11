@@ -7,6 +7,7 @@
 ### Changed
 * GeomEncoder now uses builder pattern
 * Made Tile::compute_size private
+* Tile::get_extent() => extent()
 
 ## [0.1.0] - 2010-01-10
 * Initial version

@@ -96,7 +96,7 @@ impl Tile {
     }
 
     /// Get extent in screen coördinates.
-    pub fn get_extent(&self) -> u32 {
+    pub fn extent(&self) -> u32 {
         self.extent
     }
 
