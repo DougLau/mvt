@@ -36,7 +36,7 @@ pub enum Error {
 /// # use mvt::Error;
 /// # fn main() -> Result<(), Error> {
 ///       use mvt::Tile;
-///       let mut tile = Tile::new(2048);
+///       let mut tile = Tile::new(4096);
 ///       let layer = tile.create_layer("First Layer");
 ///       // ...
 ///       // set up the layer
@@ -59,7 +59,7 @@ pub struct Tile {
 /// # Example
 /// ```
 /// use mvt::Tile;
-/// let mut tile = Tile::new(2048);
+/// let mut tile = Tile::new(4096);
 /// let layer = tile.create_layer("First Layer");
 /// // ...
 /// // set up the layer
@@ -81,7 +81,7 @@ pub struct Layer {
 /// # use mvt::Error;
 /// # fn main() -> Result<(), Error> {
 ///       use mvt::{GeomEncoder,GeomType,Tile,Transform};
-///       let mut tile = Tile::new(2048);
+///       let mut tile = Tile::new(4096);
 ///       let layer = tile.create_layer("First Layer");
 ///       let encoder = GeomEncoder::new(GeomType::Linestring, Transform::new());
 ///       let feature = layer.into_feature(encoder);
