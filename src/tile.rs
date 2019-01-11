@@ -4,29 +4,15 @@
 //
 //! Tile, Layer and Feature structs.
 //!
-use protobuf::error::ProtobufError;
 use protobuf::stream::CodedOutputStream;
 use protobuf::Message;
-use std::fmt;
 use std::io::Write;
 use std::vec::Vec;
 
-use crate::encoder::{GeomEncoder, GeomType};
+use crate::Error;
+use crate::encoder::{GeomData, GeomType};
 use crate::vector_tile::Tile as VecTile;
 use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
-
-/// MVT Error types
-#[derive(Debug)]
-pub enum Error {
-    /// The tile already contains a layer with the specified name.
-    DuplicateName(),
-    /// The layer already contains a feature with the specified ID.
-    DuplicateId(),
-    /// The layer extent does not match the tile extent.
-    WrongExtent(),
-    /// Error while encoding data.
-    Protobuf(ProtobufError),
-}
 
 /// A tile represents a rectangular region of a map at a particular zoom level.
 /// Each tile can contain any number of [layers](struct.Layer.html).
@@ -83,8 +69,11 @@ pub struct Layer {
 ///       use mvt::{GeomEncoder,GeomType,Tile,Transform};
 ///       let mut tile = Tile::new(4096);
 ///       let layer = tile.create_layer("First Layer");
-///       let encoder = GeomEncoder::new(GeomType::Linestring, Transform::new());
-///       let feature = layer.into_feature(encoder);
+///       let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
+///                                   .add_point(1.0, 2.0)
+///                                   .add_point(7.0, 6.0)
+///                                   .encode()?;
+///       let feature = layer.into_feature(geom_data);
 ///       // ...
 ///       // add any tags or ID to the feature
 ///       // ...
@@ -95,26 +84,6 @@ pub struct Layer {
 pub struct Feature {
     feature: Tile_Feature,
     layer: Layer,
-}
-
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Error::DuplicateName() => write!(f, "Name already exists"),
-            Error::DuplicateId() => write!(f, "ID already exists"),
-            Error::WrongExtent() => write!(f, "Wrong layer extent"),
-            Error::Protobuf(_) => write!(f, "Error encoding MVT data"),
-        }
-    }
-}
-
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::Protobuf(p) => Some(p),
-            _ => None,
-        }
-    }
 }
 
 impl Tile {
@@ -209,16 +178,15 @@ impl Layer {
 
     /// Create a new feature, giving it ownership of the layer.
     ///
-    /// * `encoder` Geometry encoder (consumed by this method).
-    pub fn into_feature(self, encoder: GeomEncoder) -> Feature {
+    /// * `geom_data` Geometry data (consumed by this method).
+    pub fn into_feature(self, geom_data: GeomData) -> Feature {
         let mut feature = Tile_Feature::new();
-        let geom_tp = match encoder.geom_type() {
+        feature.set_field_type(match geom_data.geom_type() {
             GeomType::Point => Tile_GeomType::POINT,
             GeomType::Linestring => Tile_GeomType::LINESTRING,
             GeomType::Polygon => Tile_GeomType::POLYGON,
-        };
-        feature.set_field_type(geom_tp);
-        feature.set_geometry(encoder.to_vec());
+        });
+        feature.set_geometry(geom_data.into_vec());
         Feature {
             feature,
             layer: self,
