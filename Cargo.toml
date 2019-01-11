@@ -1,12 +1,15 @@
 [package]
 name = "mvt"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["Douglas Lau <doug.lau@state.mn.us>"]
 description = "A library for encoding mapbox vector tiles"
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/mvt"
 homepage = "https://github.com/DougLau/mvt"
 repository = "https://github.com/DougLau/mvt"
+readme = "README.md"
+keywords = ["cartography", "mapping", "gis", "vector", "tile"]
+categories = ["encoding"]
 edition = "2018"
 
 [dependencies]
