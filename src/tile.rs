@@ -18,7 +18,7 @@ use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
 /// Each tile can contain any number of [layers](struct.Layer.html).
 /// When all layers have been added to the tile, it can be
 /// [written out](struct.Tile.html#method.write_to) or
-/// [converted](struct.Tile.html#method.to_bytes) to a Vec<u8>.
+/// [converted](struct.Tile.html#method.to_bytes) to a Vec&lt;u8>.
 ///
 /// # Example
 /// ```
