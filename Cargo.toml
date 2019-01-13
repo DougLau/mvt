@@ -8,7 +8,7 @@ documentation = "https://docs.rs/mvt"
 homepage = "https://github.com/DougLau/mvt"
 repository = "https://github.com/DougLau/mvt"
 readme = "README.md"
-keywords = ["cartography", "mapping", "gis", "vector", "tile"]
+keywords = ["cartography", "gis", "vector", "tile", "mapbox"]
 categories = ["encoding"]
 edition = "2018"
 
