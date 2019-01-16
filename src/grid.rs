@@ -7,25 +7,25 @@
 use crate::Error;
 use crate::geom::{Transform, Vec2};
 
-/// A bounding box is an axis-aligned rectangle.  It is defined by two points:
-/// top_left and bottom_right.
+/// A bounding box is an axis-aligned rectangle.  It is defined by two corners:
+/// north_west and south_east.
 ///
 /// # Example
 /// ```
 /// use mvt::{BBox, Vec2};
-/// let top_left = Vec2::new(-10.0, 0.0);
-/// let bottom_right = Vec2::new(10.0, 8.0);
-/// let bbox = BBox::new(top_left, bottom_right);
+/// let north_west = Vec2::new(-10.0, 0.0);
+/// let south_east = Vec2::new(10.0, 8.0);
+/// let bbox = BBox::new(north_west, south_east);
 /// ```
 #[derive(Clone)]
 pub struct BBox {
-    top_left: Vec2,
-    bottom_right: Vec2,
+    north_west: Vec2,
+    south_east: Vec2,
 }
 
 /// A tile ID identifies a tile on a grid at a specific zoom level.  It uses
-/// XYZ addressing, with X increasing from left to right and Y increasing from
-/// top to bottom.  The X and Y values can range from 0 to 2<sup>Z</sup>-1.
+/// XYZ addressing, with X increasing from west to east and Y increasing from
+/// north to south.  The X and Y values can range from 0 to 2<sup>Z</sup>-1.
 #[derive(Clone)]
 pub struct TileId {
     x: u32,
@@ -42,40 +42,40 @@ pub struct Grid {
 impl BBox {
     /// Create a new bounding box.
     ///
-    /// * `top_left` The top-left corner of the bounds.
-    /// * `borrom_right` The bottom-right corner of the bounds.
-    pub fn new(top_left: Vec2, bottom_right: Vec2) -> Self {
-        BBox { top_left, bottom_right }
+    /// * `north_west` The north-west (top-left) corner of the bounds.
+    /// * `south_east` The south-east (bottom-right) corner of the bounds.
+    pub fn new(north_west: Vec2, south_east: Vec2) -> Self {
+        BBox { north_west, south_east }
     }
 
     /// Get the minimum X value.
     pub fn x_min(&self) -> f64 {
-        self.top_left.x.min(self.bottom_right.x)
+        self.north_west.x.min(self.south_east.x)
     }
 
     /// Get the maximum X value.
     pub fn x_max(&self) -> f64 {
-        self.top_left.x.max(self.bottom_right.x)
+        self.north_west.x.max(self.south_east.x)
     }
 
     /// Get the minimum Y value.
     pub fn y_min(&self) -> f64 {
-        self.top_left.y.min(self.bottom_right.y)
+        self.north_west.y.min(self.south_east.y)
     }
 
     /// Get the maximum Y value.
     pub fn y_max(&self) -> f64 {
-        self.top_left.y.max(self.bottom_right.y)
+        self.north_west.y.max(self.south_east.y)
     }
 
     /// Get the X span.
     fn x_span(&self) -> f64 {
-        self.bottom_right.x - self.top_left.x
+        self.south_east.x - self.north_west.x
     }
 
     /// Get the Y span.
     fn y_span(&self) -> f64 {
-        self.bottom_right.y - self.top_left.y
+        self.south_east.y - self.north_west.y
     }
 }
 
@@ -133,9 +133,9 @@ impl Grid {
     pub fn new_web_mercator() -> Self {
         const HALF_SIZE_M: f64 = 20037508.3427892480;
         let srid = 3857;
-        let top_left = Vec2::new(-HALF_SIZE_M, HALF_SIZE_M);
-        let bottom_right = Vec2::new(HALF_SIZE_M, -HALF_SIZE_M);
-        let bbox = BBox::new(top_left, bottom_right);
+        let north_west = Vec2::new(-HALF_SIZE_M, HALF_SIZE_M);
+        let south_east = Vec2::new(HALF_SIZE_M, -HALF_SIZE_M);
+        let bbox = BBox::new(north_west, south_east);
         Grid::new(srid, bbox)
     }
 
@@ -149,14 +149,14 @@ impl Grid {
         let tz = SCALE[tid.z as usize];
         let sx = self.bbox.x_span() * tz;
         let sy = self.bbox.y_span() * tz;
-        let tx = self.bbox.top_left.x;
-        let ty = self.bbox.top_left.y;
+        let tx = self.bbox.north_west.x;
+        let ty = self.bbox.north_west.y;
         let t = Transform::new_scale(sx, sy).translate(tx, ty);
         let tidx = tid.x as f64;
         let tidy = tid.y as f64;
-        let top_left = t * Vec2::new(tidx, tidy);
-        let bottom_right = t * Vec2::new(tidx + 1.0, tidy + 1.0);
-        BBox::new(top_left, bottom_right)
+        let north_west = t * Vec2::new(tidx, tidy);
+        let south_east = t * Vec2::new(tidx + 1.0, tidy + 1.0);
+        BBox::new(north_west, south_east)
     }
 }
 
@@ -168,36 +168,36 @@ mod test {
         let g = Grid::new_web_mercator();
         if let Ok(tid) = TileId::new(0, 0, 0) {
             let b = g.tile_bounds(tid);
-            assert_eq!(b.top_left,
+            assert_eq!(b.north_west,
                        Vec2::new(-20037508.3427892480, 20037508.3427892480));
-            assert_eq!(b.bottom_right,
+            assert_eq!(b.south_east,
                        Vec2::new(20037508.3427892480, -20037508.3427892480));
         } else {
             assert!(false);
         }
         if let Ok(tid) = TileId::new(0, 0, 1) {
             let b = g.tile_bounds(tid);
-            assert_eq!(b.top_left,
+            assert_eq!(b.north_west,
                        Vec2::new(-20037508.3427892480, 20037508.3427892480));
-            assert_eq!(b.bottom_right,
+            assert_eq!(b.south_east,
                        Vec2::new(0.0, 0.0));
         } else {
             assert!(false);
         }
         if let Ok(tid) = TileId::new(1, 1, 1) {
             let b = g.tile_bounds(tid);
-            assert_eq!(b.top_left,
+            assert_eq!(b.north_west,
                        Vec2::new(0.0, 0.0));
-            assert_eq!(b.bottom_right,
+            assert_eq!(b.south_east,
                        Vec2::new(20037508.3427892480, -20037508.3427892480));
         } else {
             assert!(false);
         }
         if let Ok(tid) = TileId::new(246, 368, 10) {
             let b = g.tile_bounds(tid);
-            assert_eq!(b.top_left,
+            assert_eq!(b.north_west,
                        Vec2::new(-10410111.756214727, 5635549.221409475));
-            assert_eq!(b.bottom_right,
+            assert_eq!(b.south_east,
                        Vec2::new(-10370975.997732716, 5596413.462927466));
         } else {
             assert!(false);
