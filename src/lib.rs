@@ -56,6 +56,6 @@ mod tile;
 mod vector_tile;
 
 pub use crate::encoder::{GeomData, GeomEncoder, GeomType};
-pub use crate::geom::Transform;
+pub use crate::geom::{Transform, Vec2};
 pub use crate::grid::{BBox, Grid, TileId};
 pub use crate::tile::{Feature, Layer, Tile};

@@ -2,15 +2,30 @@
 //
 // Copyright (c) 2019 Minnesota Department of Transportation
 //
+//! BBox, TileId and Grid structs.
+//!
 use crate::Error;
 use crate::geom::{Transform, Vec2};
 
+/// A bounding box is an axis-aligned rectangle.  It is defined by two points:
+/// top_left and bottom_right.
+///
+/// # Example
+/// ```
+/// use mvt::{BBox, Vec2};
+/// let top_left = Vec2::new(-10.0, 0.0);
+/// let bottom_right = Vec2::new(10.0, 8.0);
+/// let bbox = BBox::new(top_left, bottom_right);
+/// ```
 #[derive(Clone)]
 pub struct BBox {
     top_left: Vec2,
     bottom_right: Vec2,
 }
 
+/// A tile ID identifies a tile on a grid at a specific zoom level.  It uses
+/// XYZ addressing, with X increasing from left to right and Y increasing from
+/// top to bottom.  The X and Y values can range from 0 to 2<sup>Z</sup>-1.
 #[derive(Clone)]
 pub struct TileId {
     x: u32,
@@ -18,41 +33,53 @@ pub struct TileId {
     z: u32,
 }
 
+/// A grid is used to address [tile](struct.Tile.html)s on a map.
 pub struct Grid {
     srid: i32,
     bbox: BBox,
 }
 
 impl BBox {
+    /// Create a new bounding box.
+    ///
+    /// * `top_left` The top-left corner of the bounds.
+    /// * `borrom_right` The bottom-right corner of the bounds.
     pub fn new(top_left: Vec2, bottom_right: Vec2) -> Self {
         BBox { top_left, bottom_right }
     }
 
+    /// Get the minimum X value.
     pub fn x_min(&self) -> f64 {
         self.top_left.x.min(self.bottom_right.x)
     }
 
+    /// Get the maximum X value.
     pub fn x_max(&self) -> f64 {
         self.top_left.x.max(self.bottom_right.x)
     }
 
+    /// Get the minimum Y value.
     pub fn y_min(&self) -> f64 {
         self.top_left.y.min(self.bottom_right.y)
     }
 
+    /// Get the maximum Y value.
     pub fn y_max(&self) -> f64 {
         self.top_left.y.max(self.bottom_right.y)
     }
 
+    /// Get the X span.
     fn x_span(&self) -> f64 {
         self.bottom_right.x - self.top_left.x
     }
 
+    /// Get the Y span.
     fn y_span(&self) -> f64 {
         self.bottom_right.y - self.top_left.y
     }
 }
 
+/// Scales at each zoom level.
 const SCALE: [f64; 32] = [
     // Someday, we can use const fn...
     1.0 / (1 << 0) as f64, 1.0 / (1 << 1) as f64,
@@ -73,18 +100,22 @@ const SCALE: [f64; 32] = [
     1.0 / (1 << 30) as f64, 1.0 / (1 << 31) as f64,
 ];
 
-
 impl TileId {
-    pub fn new(x: u32, y: u32, z: u32) -> Self {
-        TileId { x, y, z }
+    /// Create a new TildId.
+    ///
+    /// If invalid, returns [Error::InvalidTid](enum.Error.html).
+    pub fn new(x: u32, y: u32, z: u32) -> Result<Self, Error> {
+        TileId::check_valid(x, y, z)?;
+        Ok(TileId { x, y, z })
     }
 
-    pub fn check_valid(&self) -> Result<(), Error> {
-        if self.z > 31 {
+    /// Check whether a tile ID is valid.
+    fn check_valid(x: u32, y: u32, z: u32) -> Result<(), Error> {
+        if z > 31 {
             return Err(Error::InvalidTid());
         }
-        let s = 1 << self.z;
-        if self.x < s && self.y < s {
+        let s = 1 << z;
+        if x < s && y < s {
             Ok(())
         } else {
             Err(Error::InvalidTid())
@@ -93,10 +124,12 @@ impl TileId {
 }
 
 impl Grid {
+    /// Create a new grid.
     fn new(srid: i32, bbox: BBox) -> Self {
         Grid { srid, bbox }
     }
 
+    /// Create a new grid using web mercator coördinates.
     pub fn new_web_mercator() -> Self {
         const HALF_SIZE_M: f64 = 20037508.3427892480;
         let srid = 3857;
@@ -106,12 +139,13 @@ impl Grid {
         Grid::new(srid, bbox)
     }
 
+    /// Get the spatial reference ID.
     pub fn srid(&self) -> i32 {
         self.srid
     }
 
-    pub fn tile_bounds(&self, tid: TileId) -> Result<BBox, Error> {
-        tid.check_valid()?;
+    /// Get the bounding box of a tile ID.
+    pub fn tile_bounds(&self, tid: TileId) -> BBox {
         let tz = SCALE[tid.z as usize];
         let sx = self.bbox.x_span() * tz;
         let sy = self.bbox.y_span() * tz;
@@ -122,7 +156,7 @@ impl Grid {
         let tidy = tid.y as f64;
         let top_left = t * Vec2::new(tidx, tidy);
         let bottom_right = t * Vec2::new(tidx + 1.0, tidy + 1.0);
-        Ok(BBox::new(top_left, bottom_right))
+        BBox::new(top_left, bottom_right)
     }
 }
 
@@ -132,7 +166,8 @@ mod test {
     #[test]
     fn test_tile_bounds() {
         let g = Grid::new_web_mercator();
-        if let Ok(b) = g.tile_bounds(TileId::new(0, 0, 0)) {
+        if let Ok(tid) = TileId::new(0, 0, 0) {
+            let b = g.tile_bounds(tid);
             assert_eq!(b.top_left,
                        Vec2::new(-20037508.3427892480, 20037508.3427892480));
             assert_eq!(b.bottom_right,
@@ -140,7 +175,8 @@ mod test {
         } else {
             assert!(false);
         }
-        if let Ok(b) = g.tile_bounds(TileId::new(0, 0, 1)) {
+        if let Ok(tid) = TileId::new(0, 0, 1) {
+            let b = g.tile_bounds(tid);
             assert_eq!(b.top_left,
                        Vec2::new(-20037508.3427892480, 20037508.3427892480));
             assert_eq!(b.bottom_right,
@@ -148,7 +184,8 @@ mod test {
         } else {
             assert!(false);
         }
-        if let Ok(b) = g.tile_bounds(TileId::new(1, 1, 1)) {
+        if let Ok(tid) = TileId::new(1, 1, 1) {
+            let b = g.tile_bounds(tid);
             assert_eq!(b.top_left,
                        Vec2::new(0.0, 0.0));
             assert_eq!(b.bottom_right,
@@ -156,7 +193,8 @@ mod test {
         } else {
             assert!(false);
         }
-        if let Ok(b) = g.tile_bounds(TileId::new(246, 368, 10)) {
+        if let Ok(tid) = TileId::new(246, 368, 10) {
+            let b = g.tile_bounds(tid);
             assert_eq!(b.top_left,
                        Vec2::new(-10410111.756214727, 5635549.221409475));
             assert_eq!(b.bottom_right,
