@@ -19,6 +19,8 @@ pub enum Error {
     DuplicateId(),
     /// The layer extent does not match the tile extent.
     WrongExtent(),
+    /// The tile ID is invalid.
+    InvalidTid(),
     /// The geometry does not meet criteria of the specification.
     InvalidGeometry(),
     /// Error while encoding protobuf data.
@@ -31,6 +33,7 @@ impl fmt::Display for Error {
             Error::DuplicateName() => write!(f, "Name already exists"),
             Error::DuplicateId() => write!(f, "ID already exists"),
             Error::WrongExtent() => write!(f, "Wrong layer extent"),
+            Error::InvalidTid() => write!(f, "Invalid tile ID"),
             Error::InvalidGeometry() => write!(f, "Invalid geometry data"),
             Error::Protobuf(e) => write!(f, "Protobuf {:?}", e),
         }
@@ -48,9 +51,11 @@ impl std::error::Error for Error {
 
 mod encoder;
 mod geom;
+mod grid;
 mod tile;
 mod vector_tile;
 
 pub use crate::encoder::{GeomData, GeomEncoder, GeomType};
 pub use crate::geom::Transform;
+pub use crate::grid::{BBox, Grid, TileId};
 pub use crate::tile::{Feature, Layer, Tile};
