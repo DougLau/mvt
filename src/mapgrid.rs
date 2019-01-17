@@ -145,8 +145,13 @@ impl MapGrid {
         self.srid
     }
 
+    /// Get the bounding box of the grid.
+    pub fn bbox(&self) -> BBox {
+        self.bbox.clone()
+    }
+
     /// Get the bounding box of a tile ID.
-    pub fn tile_bounds(&self, tid: TileId) -> BBox {
+    pub fn tile_bbox(&self, tid: TileId) -> BBox {
         let tz = SCALE[tid.z as usize];
         let sx = self.bbox.x_span() * tz;
         let sy = self.bbox.y_span() * tz;
@@ -165,10 +170,10 @@ impl MapGrid {
 mod test {
     use super::*;
     #[test]
-    fn test_tile_bounds() {
+    fn test_tile_bbox() {
         let g = MapGrid::new_web_mercator();
         if let Ok(tid) = TileId::new(0, 0, 0) {
-            let b = g.tile_bounds(tid);
+            let b = g.tile_bbox(tid);
             assert_eq!(b.north_west,
                        Vec2::new(-20037508.3427892480, 20037508.3427892480));
             assert_eq!(b.south_east,
@@ -177,7 +182,7 @@ mod test {
             assert!(false);
         }
         if let Ok(tid) = TileId::new(0, 0, 1) {
-            let b = g.tile_bounds(tid);
+            let b = g.tile_bbox(tid);
             assert_eq!(b.north_west,
                        Vec2::new(-20037508.3427892480, 20037508.3427892480));
             assert_eq!(b.south_east,
@@ -186,7 +191,7 @@ mod test {
             assert!(false);
         }
         if let Ok(tid) = TileId::new(1, 1, 1) {
-            let b = g.tile_bounds(tid);
+            let b = g.tile_bbox(tid);
             assert_eq!(b.north_west,
                        Vec2::new(0.0, 0.0));
             assert_eq!(b.south_east,
@@ -195,7 +200,7 @@ mod test {
             assert!(false);
         }
         if let Ok(tid) = TileId::new(246, 368, 10) {
-            let b = g.tile_bounds(tid);
+            let b = g.tile_bbox(tid);
             assert_eq!(b.north_west,
                        Vec2::new(-10410111.756214727, 5635549.221409475));
             assert_eq!(b.south_east,
