@@ -1,4 +1,7 @@
 ## [Unreleased]
+### Added
+* MapGrid, TileId and BBox
+* New error variant: InvalidTid
 
 ## [0.2.0] - 2018-01-11
 ### Added
