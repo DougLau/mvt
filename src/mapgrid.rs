@@ -17,7 +17,7 @@ use crate::geom::{Transform, Vec2};
 /// let south_east = Vec2::new(10.0, 8.0);
 /// let bbox = BBox::new(north_west, south_east);
 /// ```
-#[derive(Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct BBox {
     north_west: Vec2,
     south_east: Vec2,
@@ -26,9 +26,9 @@ pub struct BBox {
 /// A tile ID identifies a tile on a map grid at a specific zoom level.  It uses
 /// XYZ addressing, with X increasing from west to east and Y increasing from
 /// north to south.  The X and Y values can range from 0 to 2<sup>Z</sup>-1.
-#[derive(Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct TileId {
-    x: u32,
+    x: u32, // not public to prevent invalid values being created
     y: u32,
     z: u32,
 }
@@ -38,6 +38,21 @@ pub struct TileId {
 pub struct MapGrid {
     srid: i32,
     bbox: BBox,
+}
+
+impl TileId {
+    /// Get the X value.
+    pub fn x(&self) -> u32 {
+        self.x
+    }
+    /// Get the Y value.
+    pub fn y(&self) -> u32 {
+        self.y
+    }
+    /// Get the Z (zoom) value.
+    pub fn z(&self) -> u32 {
+        self.z
+    }
 }
 
 impl BBox {
