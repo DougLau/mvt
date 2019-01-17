@@ -1,8 +1,8 @@
-// grid.rs
+// mapgrid.rs
 //
 // Copyright (c) 2019 Minnesota Department of Transportation
 //
-//! BBox, TileId and Grid structs.
+//! BBox, TileId and MapGrid structs.
 //!
 use crate::Error;
 use crate::geom::{Transform, Vec2};
@@ -23,7 +23,7 @@ pub struct BBox {
     south_east: Vec2,
 }
 
-/// A tile ID identifies a tile on a grid at a specific zoom level.  It uses
+/// A tile ID identifies a tile on a map grid at a specific zoom level.  It uses
 /// XYZ addressing, with X increasing from west to east and Y increasing from
 /// north to south.  The X and Y values can range from 0 to 2<sup>Z</sup>-1.
 #[derive(Clone)]
@@ -33,8 +33,9 @@ pub struct TileId {
     z: u32,
 }
 
-/// A grid is used to address [tile](struct.Tile.html)s on a map.
-pub struct Grid {
+/// A map grid is used to address [tile](struct.Tile.html)s on a map.
+/// The grid should be in projected coördinates.
+pub struct MapGrid {
     srid: i32,
     bbox: BBox,
 }
@@ -123,20 +124,20 @@ impl TileId {
     }
 }
 
-impl Grid {
-    /// Create a new grid.
-    fn new(srid: i32, bbox: BBox) -> Self {
-        Grid { srid, bbox }
+impl MapGrid {
+    /// Create a new map grid.
+    pub fn new(srid: i32, bbox: BBox) -> Self {
+        MapGrid { srid, bbox }
     }
 
-    /// Create a new grid using web mercator coördinates.
+    /// Create a new map grid using web mercator coördinates.
     pub fn new_web_mercator() -> Self {
         const HALF_SIZE_M: f64 = 20037508.3427892480;
         let srid = 3857;
         let north_west = Vec2::new(-HALF_SIZE_M, HALF_SIZE_M);
         let south_east = Vec2::new(HALF_SIZE_M, -HALF_SIZE_M);
         let bbox = BBox::new(north_west, south_east);
-        Grid::new(srid, bbox)
+        MapGrid::new(srid, bbox)
     }
 
     /// Get the spatial reference ID.
@@ -165,7 +166,7 @@ mod test {
     use super::*;
     #[test]
     fn test_tile_bounds() {
-        let g = Grid::new_web_mercator();
+        let g = MapGrid::new_web_mercator();
         if let Ok(tid) = TileId::new(0, 0, 0) {
             let b = g.tile_bounds(tid);
             assert_eq!(b.north_west,
