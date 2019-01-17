@@ -164,6 +164,18 @@ impl MapGrid {
         let south_east = t * Vec2::new(tidx + 1.0, tidy + 1.0);
         BBox::new(north_west, south_east)
     }
+
+    /// Get the transform to coördinates in 0 to 1 range.
+    pub fn tile_transform(&self, tid: TileId) -> Transform {
+        let tx = self.bbox.north_west.x;
+        let ty = self.bbox.north_west.y;
+        let tz = (1 << tid.z) as f64;
+        let sx = tz / self.bbox.x_span();
+        let sy = tz / self.bbox.y_span();
+        Transform::new_translate(-tx, -ty)
+                  .scale(sx, sy)
+                  .translate(-(tid.x as f64), -(tid.y as f64))
+    }
 }
 
 #[cfg(test)]
@@ -172,41 +184,63 @@ mod test {
     #[test]
     fn test_tile_bbox() {
         let g = MapGrid::new_web_mercator();
-        if let Ok(tid) = TileId::new(0, 0, 0) {
-            let b = g.tile_bbox(tid);
-            assert_eq!(b.north_west,
-                       Vec2::new(-20037508.3427892480, 20037508.3427892480));
-            assert_eq!(b.south_east,
-                       Vec2::new(20037508.3427892480, -20037508.3427892480));
-        } else {
-            assert!(false);
-        }
-        if let Ok(tid) = TileId::new(0, 0, 1) {
-            let b = g.tile_bbox(tid);
-            assert_eq!(b.north_west,
-                       Vec2::new(-20037508.3427892480, 20037508.3427892480));
-            assert_eq!(b.south_east,
-                       Vec2::new(0.0, 0.0));
-        } else {
-            assert!(false);
-        }
-        if let Ok(tid) = TileId::new(1, 1, 1) {
-            let b = g.tile_bbox(tid);
-            assert_eq!(b.north_west,
-                       Vec2::new(0.0, 0.0));
-            assert_eq!(b.south_east,
-                       Vec2::new(20037508.3427892480, -20037508.3427892480));
-        } else {
-            assert!(false);
-        }
-        if let Ok(tid) = TileId::new(246, 368, 10) {
-            let b = g.tile_bbox(tid);
-            assert_eq!(b.north_west,
-                       Vec2::new(-10410111.756214727, 5635549.221409475));
-            assert_eq!(b.south_east,
-                       Vec2::new(-10370975.997732716, 5596413.462927466));
-        } else {
-            assert!(false);
-        }
+        let tid = TileId::new(0, 0, 0).unwrap();
+        let b = g.tile_bbox(tid);
+        assert_eq!(b.north_west,
+                   Vec2::new(-20037508.3427892480, 20037508.3427892480));
+        assert_eq!(b.south_east,
+                   Vec2::new(20037508.3427892480, -20037508.3427892480));
+
+        let tid = TileId::new(0, 0, 1).unwrap();
+        let b = g.tile_bbox(tid);
+        assert_eq!(b.north_west,
+                   Vec2::new(-20037508.3427892480, 20037508.3427892480));
+        assert_eq!(b.south_east,
+                   Vec2::new(0.0, 0.0));
+
+        let tid = TileId::new(1, 1, 1).unwrap();
+        let b = g.tile_bbox(tid);
+        assert_eq!(b.north_west,
+                   Vec2::new(0.0, 0.0));
+        assert_eq!(b.south_east,
+                   Vec2::new(20037508.3427892480, -20037508.3427892480));
+
+        let tid = TileId::new(246, 368, 10).unwrap();
+        let b = g.tile_bbox(tid);
+        assert_eq!(b.north_west,
+                   Vec2::new(-10410111.756214727, 5635549.221409475));
+        assert_eq!(b.south_east,
+                   Vec2::new(-10370975.997732716, 5596413.462927466));
+    }
+    #[test]
+    fn test_tile_transform() {
+        let g = MapGrid::new_web_mercator();
+        let tid = TileId::new(0, 0, 0).unwrap();
+        let t = g.tile_transform(tid);
+        assert_eq!(Vec2::new(0.0, 0.0),
+                   t * Vec2::new(-20037508.3427892480, 20037508.3427892480));
+        assert_eq!(Vec2::new(1.0, 1.0),
+                   t * Vec2::new(20037508.3427892480, -20037508.3427892480));
+
+        let tid = TileId::new(0, 0, 1).unwrap();
+        let t = g.tile_transform(tid);
+        assert_eq!(Vec2::new(0.0, 0.0),
+                   t * Vec2::new(-20037508.3427892480, 20037508.3427892480));
+        assert_eq!(Vec2::new(1.0, 1.0),
+                   t * Vec2::new(0.0, 0.0));
+
+        let tid = TileId::new(1, 1, 1).unwrap();
+        let t = g.tile_transform(tid);
+        assert_eq!(Vec2::new(0.0, 0.0),
+                   t * Vec2::new(0.0, 0.0));
+        assert_eq!(Vec2::new(1.0, 1.0),
+                   t * Vec2::new(20037508.3427892480, -20037508.3427892480));
+
+        let tid = TileId::new(246, 368, 10).unwrap();
+        let t = g.tile_transform(tid);
+        assert_eq!(Vec2::new(0.0, 0.0),
+                   t * Vec2::new(-10410111.756214727, 5635549.221409475));
+        assert_eq!(Vec2::new(1.0, 0.9999999999999716),
+                   t * Vec2::new(-10370975.997732716, 5596413.462927466));
     }
 }
