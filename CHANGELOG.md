@@ -1,9 +1,11 @@
 ## [Unreleased]
+
+## [0.3.0] - 2019-01-18
 ### Added
 * MapGrid, TileId and BBox
 * New error variant: InvalidTid
 
-## [0.2.0] - 2018-01-11
+## [0.2.0] - 2019-01-11
 ### Added
 * Check extent when adding layer to tile
 * GeomEncoder now has encode method to create GeomData struct
@@ -14,5 +16,5 @@
 * Made Tile::compute_size private
 * Tile::get_extent() => extent()
 
-## [0.1.0] - 2018-01-10
+## [0.1.0] - 2019-01-10
 * Initial version
