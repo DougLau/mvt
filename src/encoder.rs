@@ -6,7 +6,7 @@
 //!
 use std::vec::Vec;
 
-use crate::Error;
+use crate::error::Error;
 use crate::geom::{Transform, Vec2};
 
 #[derive(Clone, Debug)]

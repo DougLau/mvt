@@ -9,8 +9,8 @@ use protobuf::Message;
 use std::io::Write;
 use std::vec::Vec;
 
-use crate::Error;
 use crate::encoder::{GeomData, GeomType};
+use crate::error::Error;
 use crate::vector_tile::Tile as VecTile;
 use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
 

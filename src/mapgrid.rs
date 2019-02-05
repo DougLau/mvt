@@ -4,7 +4,7 @@
 //
 //! BBox, TileId and MapGrid structs.
 //!
-use crate::Error;
+use crate::error::Error;
 use crate::geom::{Transform, Vec2};
 
 /// A bounding box is an axis-aligned rectangle.  It is defined by two corners:
