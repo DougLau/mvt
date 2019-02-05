@@ -49,6 +49,12 @@ impl std::error::Error for Error {
     }
 }
 
+impl From<ProtobufError> for Error {
+    fn from(e: ProtobufError) -> Self {
+        Error::Protobuf(e)
+    }
+}
+
 mod encoder;
 mod geom;
 mod mapgrid;
