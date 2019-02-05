@@ -1,4 +1,8 @@
 ## [Unreleased]
+### Added
+* GeomEncoder::point and ::complete (for method chaining)
+### Changed
+* GeomEncoder::add_point and ::complete_geom now take a reference
 
 ## [0.3.0] - 2019-01-18
 ### Added

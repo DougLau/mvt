@@ -44,8 +44,8 @@ pub enum GeomType {
 /// # use mvt::{Error,GeomEncoder,GeomType,Transform};
 /// # fn main() -> Result<(), Error> {
 /// let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
-///                             .add_point(0.0, 0.0)
-///                             .add_point(10.0, 0.0)
+///                             .point(0.0, 0.0)
+///                             .point(10.0, 0.0)
 ///                             .encode()?;
 /// # Ok(()) }
 /// ```
@@ -67,8 +67,8 @@ pub struct GeomEncoder {
 /// # use mvt::{Error,GeomEncoder,GeomType,Transform};
 /// # fn main() -> Result<(), Error> {
 /// let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
-///                             .add_point(0.0, 0.0)
-///                             .add_point(10.0, 0.0)
+///                             .point(0.0, 0.0)
+///                             .point(10.0, 0.0)
 ///                             .encode()?;
 /// # Ok(()) }
 /// ```
@@ -140,7 +140,7 @@ impl GeomEncoder {
     }
 
     /// Add a point.
-    pub fn add_point(mut self, x: f64, y: f64) -> Self {
+    pub fn add_point(&mut self, x: f64, y: f64) {
         match self.geom_tp {
             GeomType::Point => {
                 if self.count == 0 {
@@ -160,11 +160,16 @@ impl GeomEncoder {
         }
         self.push_point(x, y);
         self.count += 1;
+    }
+
+    /// Add a point, taking ownership (for method chaining).
+    pub fn point(mut self, x: f64, y: f64) -> Self {
+        self.add_point(x, y);
         self
     }
 
     /// Complete the current geometry (for multilinestring / multipolygon).
-    pub fn complete_geom(mut self) -> Result<Self, Error> {
+    pub fn complete_geom(&mut self) -> Result<(), Error> {
         // FIXME: return Error::InvalidGeometry
         //        if "MUST" rules in the spec are violated
         match self.geom_tp {
@@ -183,6 +188,12 @@ impl GeomEncoder {
                 self.count = 0;
             }
         }
+        Ok(())
+    }
+
+    /// Complete the current geometry (for multilinestring / multipolygon).
+    pub fn complete(mut self) -> Result<Self, Error> {
+        self.complete_geom()?;
         Ok(self)
     }
 
@@ -196,7 +207,7 @@ impl GeomEncoder {
             }
             self
         } else {
-            self.complete_geom()?
+            self.complete()?
         };
         Ok(GeomData::new(self.geom_tp, self.data))
     }
@@ -229,7 +240,7 @@ mod test {
     #[test]
     fn test_point() {
         let v = GeomEncoder::new(GeomType::Point, Transform::new())
-                            .add_point(25.0, 17.0)
+                            .point(25.0, 17.0)
                             .encode()
                             .unwrap()
                             .into_vec();
@@ -238,8 +249,8 @@ mod test {
     #[test]
     fn test_multipoint() {
         let v = GeomEncoder::new(GeomType::Point, Transform::new())
-                            .add_point(5.0, 7.0)
-                            .add_point(3.0, 2.0)
+                            .point(5.0, 7.0)
+                            .point(3.0, 2.0)
                             .encode()
                             .unwrap()
                             .into_vec();
@@ -248,9 +259,9 @@ mod test {
     #[test]
     fn test_linestring() {
         let v = GeomEncoder::new(GeomType::Linestring, Transform::new())
-                            .add_point(2.0, 2.0)
-                            .add_point(2.0, 10.0)
-                            .add_point(10.0, 10.0)
+                            .point(2.0, 2.0)
+                            .point(2.0, 10.0)
+                            .point(10.0, 10.0)
                             .encode()
                             .unwrap()
                             .into_vec();
@@ -259,13 +270,13 @@ mod test {
     #[test]
     fn test_multilinestring() {
         let v = GeomEncoder::new(GeomType::Linestring, Transform::new())
-                            .add_point(2.0, 2.0)
-                            .add_point(2.0, 10.0)
-                            .add_point(10.0, 10.0)
-                            .complete_geom()
+                            .point(2.0, 2.0)
+                            .point(2.0, 10.0)
+                            .point(10.0, 10.0)
+                            .complete()
                             .unwrap()
-                            .add_point(1.0, 1.0)
-                            .add_point(3.0, 5.0)
+                            .point(1.0, 1.0)
+                            .point(3.0, 5.0)
                             .encode()
                             .unwrap()
                             .into_vec();
@@ -274,9 +285,9 @@ mod test {
     #[test]
     fn test_polygon() {
         let v = GeomEncoder::new(GeomType::Polygon, Transform::new())
-                            .add_point(3.0, 6.0)
-                            .add_point(8.0, 12.0)
-                            .add_point(20.0, 34.0)
+                            .point(3.0, 6.0)
+                            .point(8.0, 12.0)
+                            .point(20.0, 34.0)
                             .encode()
                             .unwrap()
                             .into_vec();
@@ -286,32 +297,32 @@ mod test {
     fn test_multipolygon() {
         let v = GeomEncoder::new(GeomType::Polygon, Transform::new())
                             // positive area => exterior ring
-                            .add_point(0.0, 0.0)
-                            .add_point(10.0, 0.0)
-                            .add_point(10.0, 10.0)
-                            .add_point(0.0, 10.0)
-                            .complete_geom()
+                            .point(0.0, 0.0)
+                            .point(10.0, 0.0)
+                            .point(10.0, 10.0)
+                            .point(0.0, 10.0)
+                            .complete()
                             .unwrap()
                             // positive area => exterior ring
-                            .add_point(11.0, 11.0)
-                            .add_point(20.0, 11.0)
-                            .add_point(20.0, 20.0)
-                            .add_point(11.0, 20.0)
-                            .complete_geom()
+                            .point(11.0, 11.0)
+                            .point(20.0, 11.0)
+                            .point(20.0, 20.0)
+                            .point(11.0, 20.0)
+                            .complete()
                             .unwrap()
                             // negative area => interior ring
-                            .add_point(13.0, 13.0)
-                            .add_point(13.0, 17.0)
-                            .add_point(17.0, 17.0)
-                            .add_point(17.0, 13.0)
+                            .point(13.0, 13.0)
+                            .point(13.0, 17.0)
+                            .point(17.0, 17.0)
+                            .point(17.0, 13.0)
                             .encode()
                             .unwrap()
                             .into_vec();
         assert_eq!(
             v,
             vec!(
-                9, 0, 0, 26, 20, 0, 0, 20, 19, 0, 15, 9, 22, 2, 26, 18, 0, 0, 18, 17, 0, 15, 9, 4,
-                13, 26, 0, 8, 8, 0, 0, 7, 15
+                9, 0, 0, 26, 20, 0, 0, 20, 19, 0, 15, 9, 22, 2, 26, 18, 0, 0,
+                18, 17, 0, 15, 9, 4, 13, 26, 0, 8, 8, 0, 0, 7, 15
             )
         );
     }
