@@ -4,6 +4,7 @@
 //
 //! BBox, TileId and MapGrid structs.
 //!
+use std::fmt;
 use crate::error::Error;
 use crate::geom::{Transform, Vec2};
 
@@ -52,6 +53,12 @@ impl TileId {
     /// Get the Z (zoom) value.
     pub fn z(&self) -> u32 {
         self.z
+    }
+}
+
+impl fmt::Display for TileId {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}/{}/{}", self.z, self.x, self.y)
     }
 }
 
