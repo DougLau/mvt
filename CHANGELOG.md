@@ -1,4 +1,6 @@
 ## [Unreleased]
+
+## [0.4.0] - 2019-02-07
 ### Added
 * GeomEncoder::point and ::complete (for method chaining)
 ### Changed
