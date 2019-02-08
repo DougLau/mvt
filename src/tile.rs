@@ -145,7 +145,8 @@ impl Tile {
     pub fn write_to(&self, mut out: &mut Write) -> Result<(), Error> {
         let mut os = CodedOutputStream::new(&mut out);
         let _ = self.vec_tile.write_to(&mut os);
-        Ok(os.flush()?)
+        os.flush()?;
+        Ok(())
     }
 
     /// Encode the tile and return the bytes.
@@ -238,7 +239,8 @@ impl Feature {
         {
             Err(Error::DuplicateId())
         } else {
-            Ok(self.feature.set_id(id))
+            self.feature.set_id(id);
+            Ok(())
         }
     }
 

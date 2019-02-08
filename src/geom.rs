@@ -1,6 +1,6 @@
 // geom.rs
 //
-// Copyright (c) 2017-2018  Douglas P Lau
+// Copyright (c) 2017-2019  Douglas P Lau
 //
 //! Basic 2D geometry -- Vec2 and Transform.
 //!
@@ -111,6 +111,12 @@ impl Vec2 {
     /// Calculate the distance between two Vec2
     pub fn dist(self, other: Self) -> f64 {
         self.dist_sq(other).sqrt()
+    }
+}
+
+impl Default for Transform {
+    fn default() -> Self {
+        Transform::new()
     }
 }
 

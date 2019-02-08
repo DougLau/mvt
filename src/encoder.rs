@@ -224,7 +224,7 @@ impl GeomData {
 
     /// Get the geometry type
     pub(crate) fn geom_type(&self) -> GeomType {
-        self.geom_tp.clone()
+        self.geom_tp
     }
 
     /// Get the geometry data

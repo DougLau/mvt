@@ -154,7 +154,7 @@ impl MapGrid {
 
     /// Create a new map grid using web mercator coördinates.
     pub fn new_web_mercator() -> Self {
-        const HALF_SIZE_M: f64 = 20037508.3427892480;
+        const HALF_SIZE_M: f64 = 20_037_508.342_789_248;
         let srid = 3857;
         let north_west = Vec2::new(-HALF_SIZE_M, HALF_SIZE_M);
         let south_east = Vec2::new(HALF_SIZE_M, -HALF_SIZE_M);
@@ -169,7 +169,7 @@ impl MapGrid {
 
     /// Get the bounding box of the grid.
     pub fn bbox(&self) -> BBox {
-        self.bbox.clone()
+        self.bbox
     }
 
     /// Get the bounding box of a tile ID.
@@ -180,8 +180,8 @@ impl MapGrid {
         let tx = self.bbox.north_west.x;
         let ty = self.bbox.north_west.y;
         let t = Transform::new_scale(sx, sy).translate(tx, ty);
-        let tidx = tid.x as f64;
-        let tidy = tid.y as f64;
+        let tidx = f64::from(tid.x);
+        let tidy = f64::from(tid.y);
         let north_west = t * Vec2::new(tidx, tidy);
         let south_east = t * Vec2::new(tidx + 1.0, tidy + 1.0);
         BBox::new(north_west, south_east)
@@ -191,12 +191,12 @@ impl MapGrid {
     pub fn tile_transform(&self, tid: TileId) -> Transform {
         let tx = self.bbox.north_west.x;
         let ty = self.bbox.north_west.y;
-        let tz = (1 << tid.z) as f64;
+        let tz = f64::from(1 << tid.z);
         let sx = tz / self.bbox.x_span();
         let sy = tz / self.bbox.y_span();
         Transform::new_translate(-tx, -ty)
                   .scale(sx, sy)
-                  .translate(-(tid.x as f64), -(tid.y as f64))
+                  .translate(-f64::from(tid.x), -f64::from(tid.y))
     }
 }
 
