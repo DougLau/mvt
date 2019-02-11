@@ -228,6 +228,11 @@ impl Feature {
         self.layer
     }
 
+    /// Get the layer, abandoning the feature.
+    pub fn layer(self) -> Layer {
+        self.layer
+    }
+
     /// Set the feature ID.
     pub fn set_id(&mut self, id: u64) -> Result<(), Error> {
         if self
@@ -242,6 +247,11 @@ impl Feature {
             self.feature.set_id(id);
             Ok(())
         }
+    }
+
+    /// Get number of tags (count).
+    pub fn num_tags(&self) -> usize {
+        self.feature.get_tags().len()
     }
 
     /// Add a tag of string type.
