@@ -18,6 +18,8 @@ pub enum Error {
     InvalidGeometry(),
     /// Error while encoding protobuf data.
     Protobuf(ProtobufError),
+    /// Other error (For use until a breaking change can be made).
+    Other(String),
 }
 
 impl fmt::Display for Error {
@@ -28,6 +30,7 @@ impl fmt::Display for Error {
             Error::InvalidTid() => write!(f, "Invalid tile ID"),
             Error::InvalidGeometry() => write!(f, "Invalid geometry data"),
             Error::Protobuf(e) => write!(f, "Protobuf {:?}", e),
+            Error::Other(s) => write!(f, "Error {}", s),
         }
     }
 }

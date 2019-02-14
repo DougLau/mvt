@@ -1,6 +1,7 @@
 ## [Unreleased]
 ### Added
 * Feature::layer and ::num_tags methods
+* Error::Other
 ### Changed
 * Feature::set_id can no longer fail
 ### Removed
