@@ -234,19 +234,12 @@ impl Feature {
     }
 
     /// Set the feature ID.
-    pub fn set_id(&mut self, id: u64) -> Result<(), Error> {
-        if self
-            .layer
-            .layer
-            .get_features()
-            .iter()
-            .any({ |f| f.get_id() == id })
-        {
-            Err(Error::DuplicateId())
-        } else {
-            self.feature.set_id(id);
-            Ok(())
+    pub fn set_id(&mut self, id: u64) {
+        let layer = &self.layer.layer;
+        if layer.get_features().iter().any({ |f| f.get_id() == id }) {
+            warn!("Duplicate feature ID ({}) in layer {}", id, layer.get_name());
         }
+        self.feature.set_id(id);
     }
 
     /// Get number of tags (count).

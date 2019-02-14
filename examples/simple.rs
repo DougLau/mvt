@@ -11,7 +11,7 @@ fn main() -> Result<(), Error> {
                         .point(2048.0, 4096.0)
                         .encode()?;
     let mut feature = layer.into_feature(b);
-    feature.set_id(1)?;
+    feature.set_id(1);
     feature.add_tag_string("key", "value");
     let layer = feature.into_layer();
     tile.add_layer(layer)?;
