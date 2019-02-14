@@ -10,8 +10,6 @@ use std::fmt;
 pub enum Error {
     /// The tile already contains a layer with the specified name.
     DuplicateName(),
-    /// The layer already contains a feature with the specified ID.
-    DuplicateId(),
     /// The layer extent does not match the tile extent.
     WrongExtent(),
     /// The tile ID is invalid.
@@ -26,7 +24,6 @@ impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Error::DuplicateName() => write!(f, "Name already exists"),
-            Error::DuplicateId() => write!(f, "ID already exists"),
             Error::WrongExtent() => write!(f, "Wrong layer extent"),
             Error::InvalidTid() => write!(f, "Invalid tile ID"),
             Error::InvalidGeometry() => write!(f, "Invalid geometry data"),

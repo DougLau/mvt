@@ -3,6 +3,8 @@
 * Feature::layer and ::num_tags methods
 ### Changed
 * Feature::set_id can no longer fail
+### Removed
+* Error::DuplicateId
 
 ## [0.4.0] - 2019-02-07
 ### Added
