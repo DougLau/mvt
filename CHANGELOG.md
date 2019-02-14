@@ -1,4 +1,6 @@
 ## [Unreleased]
+
+## [0.5.0] - 2019-02-14
 ### Added
 * Feature::layer and ::num_tags methods
 * Error::Other
