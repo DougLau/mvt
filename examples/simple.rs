@@ -1,4 +1,4 @@
-use mvt::{Error,GeomEncoder,GeomType,Tile,Transform};
+use mvt::{Error, GeomEncoder, GeomType, Tile, Transform};
 
 fn main() -> Result<(), Error> {
     let mut tile = Tile::new(4096);
