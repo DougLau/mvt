@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.5.1] - 2019-02-22
+### Changed
+* Made MapGrid cloneable
+* Made Tile::compute_size() public
+
 ## [0.5.0] - 2019-02-14
 ### Added
 * Feature::layer and ::num_tags methods
