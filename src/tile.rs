@@ -159,7 +159,7 @@ impl Tile {
     }
 
     /// Compute the encoded size in bytes.
-    fn compute_size(&self) -> usize {
+    pub fn compute_size(&self) -> usize {
         self.vec_tile.compute_size() as usize
     }
 }
