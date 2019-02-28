@@ -1,4 +1,6 @@
 ## [Unreleased]
+
+## [0.5.2] - 2019-02-28
 ### Added
 * Layer::name() method
 
