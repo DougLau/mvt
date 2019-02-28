@@ -174,6 +174,11 @@ impl Layer {
         Layer { layer }
     }
 
+    /// Get the layer name.
+    pub fn name(&self) -> &str {
+        self.layer.get_name()
+    }
+
     /// Get number of features (count).
     pub fn num_features(&self) -> usize {
         self.layer.get_features().len()
