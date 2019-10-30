@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.5.3] - 2019-10-30
+### Changed
+* Updated protobuf dependency
+
 ## [0.5.2] - 2019-02-28
 ### Added
 * Layer::name() method

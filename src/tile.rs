@@ -144,7 +144,7 @@ impl Tile {
     /// Write the tile.
     ///
     /// * `out` Writer to output the tile.
-    pub fn write_to(&self, mut out: &mut Write) -> Result<(), Error> {
+    pub fn write_to(&self, mut out: &mut dyn Write) -> Result<(), Error> {
         let mut os = CodedOutputStream::new(&mut out);
         let _ = self.vec_tile.write_to(&mut os);
         os.flush()?;
