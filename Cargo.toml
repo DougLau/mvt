@@ -14,4 +14,13 @@ edition = "2018"
 
 [dependencies]
 log = "0.4"
-protobuf = "2.8"
+protobuf = "2.17"
+protobuf-codegen-pure = { version = "2.17", optional = true }
+
+[features]
+update = ["protobuf-codegen-pure"]
+
+[[bin]]
+# `cargo run --features=update` when updating to a new protobuf version
+name = "mvt"
+required-features = ["update"]

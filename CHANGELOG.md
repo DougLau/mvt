@@ -1,4 +1,8 @@
 ## [Unreleased]
+### Added
+* Use `cargo run --features=update` to update to a new protobuf version
+### Changed
+* Updated to protobuf 2.17
 
 ## [0.5.3] - 2019-10-30
 ### Changed
