@@ -38,6 +38,8 @@
 //! [layer]: struct.Layer.html
 //! [mapbox vector tiles]: https://github.com/mapbox/vector-tile-spec
 //! [tile]: struct.Tile.html
+#![forbid(unsafe_code)]
+
 #[macro_use]
 extern crate log;
 
