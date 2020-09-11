@@ -1,4 +1,6 @@
 ## [Unreleased]
+
+## [0.5.4] - 2020-09-11
 ### Added
 * Use `cargo run --features=update` to update to a new protobuf version
 ### Changed
