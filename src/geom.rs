@@ -1,6 +1,6 @@
 // geom.rs
 //
-// Copyright (c) 2017-2019  Douglas P Lau
+// Copyright (c) 2017-2020  Douglas P Lau
 //
 //! Basic 2D geometry -- Vec2 and Transform.
 //!
@@ -302,7 +302,9 @@ mod test {
     #[test]
     fn test_transform() {
         assert_eq!(
-            (Transform::new_translate(1.0, 2.0) * Transform::new_scale(2.0, 2.0)).e,
+            (Transform::new_translate(1.0, 2.0)
+                * Transform::new_scale(2.0, 2.0))
+            .e,
             [2.0, 0.0, 2.0, 0.0, 2.0, 4.0]
         );
         assert_eq!(

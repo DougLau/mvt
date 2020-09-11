@@ -1,14 +1,12 @@
 // lib.rs      mvt crate.
 //
-// Copyright (c) 2019 Minnesota Department of Transportation
+// Copyright (c) 2019-2020  Minnesota Department of Transportation
 //
-//! A library for encoding [mapbox vector tiles](https://github.com/mapbox/vector-tile-spec)
-//! (MVT).
+//! A library for encoding [mapbox vector tiles].
 //!
-//! A [tile](struct.Tile.html) is composed of one or more
-//! [layer](struct.Layer.html)s.  Each layer can have any number of
-//! [feature](struct.Feature.html)s, which contain the geometry to be rendered.
-//! They can also have metadata tags, which are key/value pairs.
+//! A [tile] is composed of one or more [layer]s.  Each layer can have any number
+//! of [feature]s, which contain the geometry to be rendered.  They can also have
+//! metadata tags, which are key/value pairs.
 //!
 //! ## Example
 //!
@@ -35,7 +33,13 @@
 //!     Ok(())
 //! }
 //! ```
-#[macro_use] extern crate log;
+//!
+//! [feature]: struct.Feature.html
+//! [layer]: struct.Layer.html
+//! [mapbox vector tiles]: https://github.com/mapbox/vector-tile-spec
+//! [tile]: struct.Tile.html
+#[macro_use]
+extern crate log;
 
 mod encoder;
 mod error;

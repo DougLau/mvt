@@ -1,6 +1,6 @@
 // encoder.rs
 //
-// Copyright (c) 2019 Minnesota Department of Transportation
+// Copyright (c) 2019-2020  Minnesota Department of Transportation
 //
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
@@ -240,84 +240,84 @@ mod test {
     #[test]
     fn test_point() {
         let v = GeomEncoder::new(GeomType::Point, Transform::new())
-                            .point(25.0, 17.0)
-                            .encode()
-                            .unwrap()
-                            .into_vec();
+            .point(25.0, 17.0)
+            .encode()
+            .unwrap()
+            .into_vec();
         assert_eq!(v, vec!(9, 50, 34));
     }
     #[test]
     fn test_multipoint() {
         let v = GeomEncoder::new(GeomType::Point, Transform::new())
-                            .point(5.0, 7.0)
-                            .point(3.0, 2.0)
-                            .encode()
-                            .unwrap()
-                            .into_vec();
+            .point(5.0, 7.0)
+            .point(3.0, 2.0)
+            .encode()
+            .unwrap()
+            .into_vec();
         assert_eq!(v, vec!(17, 10, 14, 3, 9));
     }
     #[test]
     fn test_linestring() {
         let v = GeomEncoder::new(GeomType::Linestring, Transform::new())
-                            .point(2.0, 2.0)
-                            .point(2.0, 10.0)
-                            .point(10.0, 10.0)
-                            .encode()
-                            .unwrap()
-                            .into_vec();
+            .point(2.0, 2.0)
+            .point(2.0, 10.0)
+            .point(10.0, 10.0)
+            .encode()
+            .unwrap()
+            .into_vec();
         assert_eq!(v, vec!(9, 4, 4, 18, 0, 16, 16, 0));
     }
     #[test]
     fn test_multilinestring() {
         let v = GeomEncoder::new(GeomType::Linestring, Transform::new())
-                            .point(2.0, 2.0)
-                            .point(2.0, 10.0)
-                            .point(10.0, 10.0)
-                            .complete()
-                            .unwrap()
-                            .point(1.0, 1.0)
-                            .point(3.0, 5.0)
-                            .encode()
-                            .unwrap()
-                            .into_vec();
+            .point(2.0, 2.0)
+            .point(2.0, 10.0)
+            .point(10.0, 10.0)
+            .complete()
+            .unwrap()
+            .point(1.0, 1.0)
+            .point(3.0, 5.0)
+            .encode()
+            .unwrap()
+            .into_vec();
         assert_eq!(v, vec!(9, 4, 4, 18, 0, 16, 16, 0, 9, 17, 17, 10, 4, 8));
     }
     #[test]
     fn test_polygon() {
         let v = GeomEncoder::new(GeomType::Polygon, Transform::new())
-                            .point(3.0, 6.0)
-                            .point(8.0, 12.0)
-                            .point(20.0, 34.0)
-                            .encode()
-                            .unwrap()
-                            .into_vec();
+            .point(3.0, 6.0)
+            .point(8.0, 12.0)
+            .point(20.0, 34.0)
+            .encode()
+            .unwrap()
+            .into_vec();
         assert_eq!(v, vec!(9, 6, 12, 18, 10, 12, 24, 44, 15));
     }
     #[test]
     fn test_multipolygon() {
         let v = GeomEncoder::new(GeomType::Polygon, Transform::new())
-                            // positive area => exterior ring
-                            .point(0.0, 0.0)
-                            .point(10.0, 0.0)
-                            .point(10.0, 10.0)
-                            .point(0.0, 10.0)
-                            .complete()
-                            .unwrap()
-                            // positive area => exterior ring
-                            .point(11.0, 11.0)
-                            .point(20.0, 11.0)
-                            .point(20.0, 20.0)
-                            .point(11.0, 20.0)
-                            .complete()
-                            .unwrap()
-                            // negative area => interior ring
-                            .point(13.0, 13.0)
-                            .point(13.0, 17.0)
-                            .point(17.0, 17.0)
-                            .point(17.0, 13.0)
-                            .encode()
-                            .unwrap()
-                            .into_vec();
+            // positive area => exterior ring
+            .point(0.0, 0.0)
+            .point(10.0, 0.0)
+            .point(10.0, 10.0)
+            .point(0.0, 10.0)
+            .complete()
+            .unwrap()
+            // positive area => exterior ring
+            .point(11.0, 11.0)
+            .point(20.0, 11.0)
+            .point(20.0, 20.0)
+            .point(11.0, 20.0)
+            .complete()
+            .unwrap()
+            // negative area => interior ring
+            .point(13.0, 13.0)
+            .point(13.0, 17.0)
+            .point(17.0, 17.0)
+            .point(17.0, 13.0)
+            .encode()
+            .unwrap()
+            .into_vec();
         assert_eq!(
             v,
             vec!(
