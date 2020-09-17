@@ -8,8 +8,9 @@ use crate::error::Error;
 use crate::geom::{Transform, Vec2};
 use std::fmt;
 
-/// A bounding box is an axis-aligned rectangle.  It is defined by two corners:
-/// north_west and south_east.
+/// A bounding box is an axis-aligned rectangle.
+///
+/// It is defined by two corners: north_west and south_east.
 ///
 /// # Example
 /// ```
@@ -25,9 +26,11 @@ pub struct BBox {
     south_east: Vec2,
 }
 
-/// A tile ID identifies a tile on a map grid at a specific zoom level.  It uses
-/// XYZ addressing, with X increasing from west to east and Y increasing from
-/// north to south.  The X and Y values can range from 0 to 2<sup>Z</sup>-1.
+/// A tile ID identifies a tile on a map grid at a specific zoom level.
+///
+/// It uses XYZ addressing, with X increasing from west to east and Y increasing
+/// from north to south.  The X and Y values can range from 0 to
+/// 2<sup>Z</sup>-1.
 #[derive(Clone, Copy, Debug)]
 pub struct TileId {
     x: u32, // not public to prevent invalid values being created
@@ -36,9 +39,9 @@ pub struct TileId {
 }
 
 /// A map grid is used to address [tile]s on a map.
-/// The grid should be in projected coördinates.
 ///
-/// Use `MapGrid::default()` for [Web Mercator]
+/// The grid should be in projected coördinates.  Use `default()` for
+/// [Web Mercator].
 ///
 /// [tile]: struct.Tile.html
 /// [Web Mercator]: https://en.wikipedia.org/wiki/Web_Mercator_projection

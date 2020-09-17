@@ -36,8 +36,9 @@ pub enum GeomType {
     Polygon,
 }
 
-/// Encoder for [Feature](struct.Feature.html) geometry.  This can consist of
-/// Point, Linestring or Polygon data.
+/// Encoder for [Feature](struct.Feature.html) geometry.
+///
+/// This can consist of Point, Linestring or Polygon data.
 ///
 /// # Example
 /// ```
@@ -59,8 +60,9 @@ pub struct GeomEncoder {
     data: Vec<u32>,
 }
 
-/// Validated geometry data for [Feature](struct.Feature.html)s.  Use
-/// [GeomEncoder](struct.GeomEncoder.html) to encode.
+/// Validated geometry data for [Feature](struct.Feature.html)s.
+///
+/// Use [GeomEncoder](struct.GeomEncoder.html) to encode.
 ///
 /// # Example
 /// ```
@@ -238,6 +240,7 @@ impl GeomData {
 #[cfg(test)]
 mod test {
     use super::*;
+
     // Examples from MVT spec:
     #[test]
     fn test_point() {
@@ -248,6 +251,7 @@ mod test {
             .into_vec();
         assert_eq!(v, vec!(9, 50, 34));
     }
+
     #[test]
     fn test_multipoint() {
         let v = GeomEncoder::new(GeomType::Point, Transform::new())
@@ -258,6 +262,7 @@ mod test {
             .into_vec();
         assert_eq!(v, vec!(17, 10, 14, 3, 9));
     }
+
     #[test]
     fn test_linestring() {
         let v = GeomEncoder::new(GeomType::Linestring, Transform::new())
@@ -269,6 +274,7 @@ mod test {
             .into_vec();
         assert_eq!(v, vec!(9, 4, 4, 18, 0, 16, 16, 0));
     }
+
     #[test]
     fn test_multilinestring() {
         let v = GeomEncoder::new(GeomType::Linestring, Transform::new())
@@ -284,6 +290,7 @@ mod test {
             .into_vec();
         assert_eq!(v, vec!(9, 4, 4, 18, 0, 16, 16, 0, 9, 17, 17, 10, 4, 8));
     }
+
     #[test]
     fn test_polygon() {
         let v = GeomEncoder::new(GeomType::Polygon, Transform::new())
@@ -295,6 +302,7 @@ mod test {
             .into_vec();
         assert_eq!(v, vec!(9, 6, 12, 18, 10, 12, 24, 44, 15));
     }
+
     #[test]
     fn test_multipolygon() {
         let v = GeomEncoder::new(GeomType::Polygon, Transform::new())

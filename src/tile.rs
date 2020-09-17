@@ -13,30 +13,33 @@ use protobuf::Message;
 use std::io::Write;
 
 /// A tile represents a rectangular region of a map.
-/// Each tile can contain any number of [layers](struct.Layer.html).
-/// When all layers have been added to the tile, it can be
-/// [written out](struct.Tile.html#method.write_to) or
-/// [converted](struct.Tile.html#method.to_bytes) to a Vec&lt;u8>.
+///
+/// Each tile can contain any number of [layers].  When all layers have been
+/// added to the tile, it can be [written out] or [converted] to a `Vec<u8>`.
 ///
 /// # Example
 /// ```
 /// # use mvt::Error;
 /// # fn main() -> Result<(), Error> {
-///       use mvt::Tile;
+/// use mvt::Tile;
 ///
-///       let mut tile = Tile::new(4096);
-///       let layer = tile.create_layer("First Layer");
-///       // ...
-///       // set up the layer
-///       // ...
-///       tile.add_layer(layer)?;
-///       // ...
-///       // add more layers
-///       // ...
-///       let data = tile.to_bytes()?;
-/// #     Ok(())
+/// let mut tile = Tile::new(4096);
+/// let layer = tile.create_layer("First Layer");
+/// // ...
+/// // set up the layer
+/// // ...
+/// tile.add_layer(layer)?;
+/// // ...
+/// // add more layers
+/// // ...
+/// let data = tile.to_bytes()?;
+/// # Ok(())
 /// # }
 /// ```
+///
+/// [converted]: struct.Tile.html#method.to_bytes
+/// [layers]: struct.Layer.html
+/// [written out]: struct.Tile.html#method.write_to
 pub struct Tile {
     vec_tile: VecTile,
     extent: u32,
@@ -58,33 +61,35 @@ pub struct Layer {
     layer: Tile_Layer,
 }
 
-/// Features contain map geometry with related metadata.
+/// A Feature contains map geometry with related metadata.
 ///
-/// A new Feature can be obtained with
-/// [Layer.into_feature](struct.Layer.html#method.into_feature).
+/// A new Feature can be obtained with [Layer.into_feature].
 /// After optionally adding an ID and tags, retrieve the Layer with the Feature
-/// added by calling [Feature.into_layer](struct.Feature.html#method.into_layer).
+/// added by calling [Feature.into_layer].
 ///
 /// # Example
 /// ```
 /// # use mvt::Error;
 /// # fn main() -> Result<(), Error> {
-///       use mvt::{GeomEncoder, GeomType, Tile, Transform};
+/// use mvt::{GeomEncoder, GeomType, Tile, Transform};
 ///
-///       let tile = Tile::new(4096);
-///       let layer = tile.create_layer("First Layer");
-///       let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
-///                                   .point(1.0, 2.0)
-///                                   .point(7.0, 6.0)
-///                                   .encode()?;
-///       let feature = layer.into_feature(geom_data);
-///       // ...
-///       // add any tags or ID to the feature
-///       // ...
-///       let layer = feature.into_layer();
-/// #     Ok(())
+/// let tile = Tile::new(4096);
+/// let layer = tile.create_layer("First Layer");
+/// let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
+///                             .point(1.0, 2.0)
+///                             .point(7.0, 6.0)
+///                             .encode()?;
+/// let feature = layer.into_feature(geom_data);
+/// // ...
+/// // add any tags or ID to the feature
+/// // ...
+/// let layer = feature.into_layer();
+/// # Ok(())
 /// # }
 /// ```
+///
+/// [Layer.into_feature]: struct.Layer.html#method.into_feature
+/// [Feature.into_layer]: struct.Feature.html#method.into_layer
 pub struct Feature {
     feature: Tile_Feature,
     layer: Layer,
