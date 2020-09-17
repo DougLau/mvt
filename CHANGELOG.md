@@ -2,6 +2,7 @@
 ### Changed
 * Implement Default for Layer
 * Made Error enum non-exhaustive
+* Replaced `MapGrid::new_web_mercator()` with `MapGrid::default()`
 
 ## [0.5.4] - 2020-09-11
 ### Added

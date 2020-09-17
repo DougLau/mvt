@@ -34,8 +34,13 @@ pub struct TileId {
     z: u32,
 }
 
-/// A map grid is used to address [tile](struct.Tile.html)s on a map.
+/// A map grid is used to address [tile]s on a map.
 /// The grid should be in projected coördinates.
+///
+/// Use `MapGrid::default()` for [Web Mercator]
+///
+/// [tile]: struct.Tile.html
+/// [Web Mercator]: https://en.wikipedia.org/wiki/Web_Mercator_projection
 #[derive(Clone, Debug)]
 pub struct MapGrid {
     /// Spatial reference ID
@@ -170,21 +175,25 @@ impl TileId {
     }
 }
 
-impl MapGrid {
-    /// Create a new map grid.
-    pub fn new(srid: i32, bbox: BBox) -> Self {
-        MapGrid { srid, bbox }
-    }
-
-    /// Create a new map grid using web mercator coördinates.
-    pub fn new_web_mercator() -> Self {
+impl Default for MapGrid {
+    fn default() -> Self {
         const HALF_SIZE_M: f64 = 20_037_508.342_789_248;
         const WEB_MERCATOR_SRID: i32 = 3857;
         let srid = WEB_MERCATOR_SRID;
         let north_west = Vec2::new(-HALF_SIZE_M, HALF_SIZE_M);
         let south_east = Vec2::new(HALF_SIZE_M, -HALF_SIZE_M);
         let bbox = BBox::new(north_west, south_east);
-        MapGrid::new(srid, bbox)
+        MapGrid { srid, bbox }
+    }
+}
+
+impl MapGrid {
+    /// Create a new map grid.
+    ///
+    /// * `srid` Spatial reference ID.
+    /// * `bbox` Bounding box.
+    pub fn new(srid: i32, bbox: BBox) -> Self {
+        MapGrid { srid, bbox }
     }
 
     /// Get the spatial reference ID.
@@ -230,7 +239,7 @@ mod test {
     use super::*;
     #[test]
     fn test_tile_bbox() {
-        let g = MapGrid::new_web_mercator();
+        let g = MapGrid::default();
         let tid = TileId::new(0, 0, 0).unwrap();
         let b = g.tile_bbox(tid);
         assert_eq!(
@@ -271,7 +280,7 @@ mod test {
     }
     #[test]
     fn test_tile_transform() {
-        let g = MapGrid::new_web_mercator();
+        let g = MapGrid::default();
         let tid = TileId::new(0, 0, 0).unwrap();
         let t = g.tile_transform(tid);
         assert_eq!(
