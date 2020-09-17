@@ -38,7 +38,9 @@ pub struct TileId {
 /// The grid should be in projected coördinates.
 #[derive(Clone, Debug)]
 pub struct MapGrid {
+    /// Spatial reference ID
     srid: i32,
+    /// Bounding box
     bbox: BBox,
 }
 
@@ -47,10 +49,12 @@ impl TileId {
     pub fn x(&self) -> u32 {
         self.x
     }
+
     /// Get the Y value.
     pub fn y(&self) -> u32 {
         self.y
     }
+
     /// Get the Z (zoom) value.
     pub fn z(&self) -> u32 {
         self.z
@@ -175,7 +179,8 @@ impl MapGrid {
     /// Create a new map grid using web mercator coördinates.
     pub fn new_web_mercator() -> Self {
         const HALF_SIZE_M: f64 = 20_037_508.342_789_248;
-        let srid = 3857;
+        const WEB_MERCATOR_SRID: i32 = 3857;
+        let srid = WEB_MERCATOR_SRID;
         let north_west = Vec2::new(-HALF_SIZE_M, HALF_SIZE_M);
         let south_east = Vec2::new(HALF_SIZE_M, -HALF_SIZE_M);
         let bbox = BBox::new(north_west, south_east);

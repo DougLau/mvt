@@ -4,15 +4,13 @@
 //
 //! Tile, Layer and Feature structs.
 //!
-use protobuf::stream::CodedOutputStream;
-use protobuf::Message;
-use std::io::Write;
-use std::vec::Vec;
-
 use crate::encoder::{GeomData, GeomType};
 use crate::error::Error;
 use crate::vector_tile::Tile as VecTile;
 use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
+use protobuf::stream::CodedOutputStream;
+use protobuf::Message;
+use std::io::Write;
 
 /// A tile represents a rectangular region of a map.
 /// Each tile can contain any number of [layers](struct.Layer.html).
@@ -25,6 +23,7 @@ use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
 /// # use mvt::Error;
 /// # fn main() -> Result<(), Error> {
 ///       use mvt::Tile;
+///
 ///       let mut tile = Tile::new(4096);
 ///       let layer = tile.create_layer("First Layer");
 ///       // ...
@@ -48,6 +47,7 @@ pub struct Tile {
 /// # Example
 /// ```
 /// use mvt::Tile;
+///
 /// let mut tile = Tile::new(4096);
 /// let layer = tile.create_layer("First Layer");
 /// // ...
@@ -69,8 +69,9 @@ pub struct Layer {
 /// ```
 /// # use mvt::Error;
 /// # fn main() -> Result<(), Error> {
-///       use mvt::{GeomEncoder,GeomType,Tile,Transform};
-///       let mut tile = Tile::new(4096);
+///       use mvt::{GeomEncoder, GeomType, Tile, Transform};
+///
+///       let tile = Tile::new(4096);
 ///       let layer = tile.create_layer("First Layer");
 ///       let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
 ///                                   .point(1.0, 2.0)
@@ -94,13 +95,13 @@ pub struct Feature {
 impl Tile {
     /// Create a new tile.
     ///
-    /// * `extent` Size in screen coördinates.
+    /// * `extent` Height / width of tile bounds.
     pub fn new(extent: u32) -> Self {
         let vec_tile = VecTile::new();
         Tile { vec_tile, extent }
     }
 
-    /// Get extent in screen coördinates.
+    /// Get extent, or height / width of tile bounds.
     pub fn extent(&self) -> u32 {
         self.extent
     }
@@ -166,6 +167,9 @@ impl Tile {
 
 impl Layer {
     /// Create a new layer.
+    ///
+    /// * `name` Layer name.
+    /// * `extent` Width / height of tile bounds.
     fn new(name: &str, extent: u32) -> Self {
         let mut layer = Tile_Layer::new();
         layer.set_version(2);

@@ -4,23 +4,23 @@
 //
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
-use std::vec::Vec;
-
 use crate::error::Error;
 use crate::geom::{Transform, Vec2};
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug)]
 enum Command {
     MoveTo = 1,
     LineTo = 2,
     ClosePath = 7,
 }
 
+#[derive(Copy, Clone, Debug)]
 struct CommandInt {
     id: Command,
     count: u32,
 }
 
+#[derive(Copy, Clone, Debug)]
 struct ParamInt {
     value: i32,
 }
@@ -81,8 +81,9 @@ impl CommandInt {
     fn new(id: Command, count: u32) -> Self {
         CommandInt { id, count }
     }
+
     fn encode(&self) -> u32 {
-        ((self.id.clone() as u32) & 0x7) | (self.count << 3)
+        ((self.id as u32) & 0x7) | (self.count << 3)
     }
 }
 
@@ -90,6 +91,7 @@ impl ParamInt {
     fn new(value: i32) -> Self {
         ParamInt { value }
     }
+
     fn encode(&self) -> u32 {
         ((self.value << 1) ^ (self.value >> 31)) as u32
     }

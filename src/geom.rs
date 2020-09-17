@@ -85,14 +85,17 @@ impl Vec2 {
     pub fn new(x: f64, y: f64) -> Self {
         Vec2 { x, y }
     }
+
     /// Create a zero Vec2
     pub fn zero() -> Self {
         Vec2::new(0.0, 0.0)
     }
+
     /// Get the magnitude of a Vec2
     pub fn mag(self) -> f64 {
         self.x.hypot(self.y)
     }
+
     /// Create a copy normalized to unit length
     pub fn normalize(self) -> Self {
         let m = self.mag();
@@ -102,12 +105,14 @@ impl Vec2 {
             Vec2::zero()
         }
     }
+
     /// Calculate the distance squared between two Vec2
     pub fn dist_sq(self, other: Self) -> f64 {
         let dx = self.x - other.x;
         let dy = self.y - other.y;
         dx * dx + dy * dy
     }
+
     /// Calculate the distance between two Vec2
     pub fn dist(self, other: Self) -> f64 {
         self.dist_sq(other).sqrt()
@@ -152,6 +157,7 @@ impl Transform {
             e: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
         }
     }
+
     /// Multiple two affine transforms.
     fn mul_e(&self, other: &Self) -> [f64; 6] {
         let mut e = [0.0; 6];
@@ -163,6 +169,7 @@ impl Transform {
         e[5] = self.e[2] * other.e[3] + self.e[5] * other.e[4] + other.e[5];
         e
     }
+
     /// Create a new translation transform.
     ///
     /// * `tx` Amount to translate X.
@@ -172,6 +179,7 @@ impl Transform {
             e: [1.0, 0.0, tx, 0.0, 1.0, ty],
         }
     }
+
     /// Create a new scale transform.
     ///
     /// * `sx` Scale factor for X dimension.
@@ -181,6 +189,7 @@ impl Transform {
             e: [sx, 0.0, 0.0, 0.0, sy, 0.0],
         }
     }
+
     /// Create a new rotation transform.
     ///
     /// * `th` Angle to rotate coordinates (radians).
@@ -191,6 +200,7 @@ impl Transform {
             e: [cs, -sn, 0.0, sn, cs, 0.0],
         }
     }
+
     /// Create a new skew transform.
     ///
     /// * `ax` Angle to skew X-axis (radians).
@@ -202,6 +212,7 @@ impl Transform {
             e: [1.0, tnx, 0.0, tny, 1.0, 0.0],
         }
     }
+
     /// Apply translation to a transform.
     ///
     /// * `tx` Amount to translate X.
@@ -210,6 +221,7 @@ impl Transform {
         self *= Transform::new_translate(tx, ty);
         self
     }
+
     /// Apply scaling to a transform.
     ///
     /// * `sx` Scale factor for X dimension.
@@ -218,6 +230,7 @@ impl Transform {
         self *= Transform::new_scale(sx, sy);
         self
     }
+
     /// Apply rotation to a transform.
     ///
     /// * `th` Angle to rotate coordinates (radians).
@@ -225,6 +238,7 @@ impl Transform {
         self *= Transform::new_rotate(th);
         self
     }
+
     /// Apply skew to a transform.
     ///
     /// * `ax` Angle to skew X-axis (radians).
@@ -239,6 +253,7 @@ impl Transform {
 mod test {
     use super::*;
     use std::f64;
+
     #[test]
     fn test_vec2() {
         let a = Vec2::new(2.0, 1.0);
@@ -252,6 +267,7 @@ mod test {
         assert_eq!(a.dist_sq(b), 10.0);
         assert_eq!(b.dist(Vec2::new(0.0, 0.0)), 5.0);
     }
+
     #[test]
     fn test_identity() {
         assert_eq!(Transform::new().e, [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]);
@@ -261,6 +277,7 @@ mod test {
         );
         assert_eq!(Transform::new() * Vec2::new(1.0, 2.0), Vec2::new(1.0, 2.0));
     }
+
     #[test]
     fn test_translate() {
         assert_eq!(
@@ -276,6 +293,7 @@ mod test {
             Vec2::new(6.0, 5.0)
         );
     }
+
     #[test]
     fn test_scale() {
         assert_eq!(
@@ -291,6 +309,7 @@ mod test {
             Vec2::new(3.0, -6.0)
         );
     }
+
     #[test]
     fn test_skew() {
         const PI: f64 = f64::consts::PI;
@@ -299,6 +318,7 @@ mod test {
             Vec2::new(15.0, 22.0)
         );
     }
+
     #[test]
     fn test_transform() {
         assert_eq!(
