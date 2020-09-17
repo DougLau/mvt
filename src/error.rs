@@ -1,11 +1,12 @@
 // error.rs
 //
-// Copyright (c) 2019 Minnesota Department of Transportation
+// Copyright (c) 2019-2020  Minnesota Department of Transportation
 //
 use protobuf::error::ProtobufError;
 use std::fmt;
 
 /// MVT Error types
+#[non_exhaustive]
 #[derive(Debug)]
 pub enum Error {
     /// The tile already contains a layer with the specified name.
@@ -18,8 +19,6 @@ pub enum Error {
     InvalidGeometry(),
     /// Error while encoding protobuf data.
     Protobuf(ProtobufError),
-    /// Other error (For use until a breaking change can be made).
-    Other(String),
 }
 
 impl fmt::Display for Error {
@@ -30,7 +29,6 @@ impl fmt::Display for Error {
             Error::InvalidTid() => write!(f, "Invalid tile ID"),
             Error::InvalidGeometry() => write!(f, "Invalid geometry data"),
             Error::Protobuf(e) => write!(f, "Protobuf {:?}", e),
-            Error::Other(s) => write!(f, "Error {}", s),
         }
     }
 }
