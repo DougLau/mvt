@@ -1,5 +1,6 @@
 ## [Unreleased]
 ### Changed
+* Implement Default for Layer
 * Made Error enum non-exhaustive
 
 ## [0.5.4] - 2020-09-11

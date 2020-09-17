@@ -165,6 +165,13 @@ impl Tile {
     }
 }
 
+impl Default for Layer {
+    fn default() -> Self {
+        let layer = Tile_Layer::new();
+        Layer { layer }
+    }
+}
+
 impl Layer {
     /// Create a new layer.
     ///
