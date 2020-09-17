@@ -20,6 +20,7 @@ pub struct Vec2 {
 /// # Example
 /// ```
 /// use mvt::Transform;
+///
 /// const PI: f64 = std::f64::consts::PI;
 /// let t = Transform::new_translate(-50.0, -50.0)
 ///                   .rotate(PI)

@@ -41,7 +41,7 @@ pub enum GeomType {
 ///
 /// # Example
 /// ```
-/// # use mvt::{Error,GeomEncoder,GeomType,Transform};
+/// # use mvt::{Error, GeomEncoder, GeomType, Transform};
 /// # fn main() -> Result<(), Error> {
 /// let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
 ///                             .point(0.0, 0.0)
@@ -64,7 +64,7 @@ pub struct GeomEncoder {
 ///
 /// # Example
 /// ```
-/// # use mvt::{Error,GeomEncoder,GeomType,Transform};
+/// # use mvt::{Error, GeomEncoder, GeomType, Transform};
 /// # fn main() -> Result<(), Error> {
 /// let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
 ///                             .point(0.0, 0.0)

@@ -14,6 +14,7 @@ use std::fmt;
 /// # Example
 /// ```
 /// use mvt::{BBox, Vec2};
+///
 /// let north_west = Vec2::new(-10.0, 0.0);
 /// let south_east = Vec2::new(10.0, 8.0);
 /// let bbox = BBox::new(north_west, south_east);
