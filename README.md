@@ -1,39 +1,11 @@
 # mvt
-A library for encoding [mapbox vector tiles](https://github.com/mapbox/vector-tile-spec)
-(MVT).  Version 2.1 of the standard is supported.
+A Rust library for encoding [mapbox vector tiles].  Decoding is not implemented.
 
-The API is designed to prevent creating files which are not allowed by the
+The [API] is designed to prevent creating files which are not allowed by the
 specification.
 
-## Example
+Version 2.1 of the standard is supported.
 
-```rust
-use mvt::{Error, GeomEncoder, GeomType, Tile, Transform};
 
-fn main() -> Result<(), Error> {
-    let mut tile = Tile::new(4096);
-    let layer = tile.create_layer("First Layer");
-    let b = GeomEncoder::new(GeomType::Linestring, Transform::new())
-                        .point(0.0, 0.0)
-                        .point(1024.0, 0.0)
-                        .point(1024.0, 2048.0)
-                        .point(2048.0, 2048.0)
-                        .point(2048.0, 4096.0)
-                        .encode()?;
-    let mut feature = layer.into_feature(b);
-    feature.set_id(1);
-    feature.add_tag_string("key", "value");
-    let layer = feature.into_layer();
-    tile.add_layer(layer)?;
-    let data = tile.to_bytes()?;
-    println!("encoded {} bytes: {:?}", data.len(), data);
-    Ok(())
-}
-```
-
-## Alternatives
-
-These are other rust projects with MVT support:
-* [hecate](https://crates.io/crates/hecate)
-* [t-rex](https://t-rex.tileserver.ch/)
-* [vectortile](https://crates.io/crates/vectortile)
+[API]: https://docs.rs/mvt
+[mapbox vector tiles]: https://github.com/mapbox/vector-tile-spec
