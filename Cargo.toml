@@ -1,6 +1,6 @@
 [package]
 name = "mvt"
-version = "0.5.4"
+version = "0.6.0"
 authors = ["Douglas Lau <doug.lau@state.mn.us>"]
 description = "A library for encoding mapbox vector tiles"
 license = "MIT OR Apache-2.0"
