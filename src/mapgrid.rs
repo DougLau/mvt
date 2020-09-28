@@ -5,7 +5,7 @@
 //! BBox, TileId and MapGrid structs.
 //!
 use crate::error::Error;
-use crate::geom::{Transform, Vec2};
+use pointy::{PtB, TransformB};
 use std::fmt;
 
 /// A bounding box is an axis-aligned rectangle.
@@ -14,16 +14,17 @@ use std::fmt;
 ///
 /// # Example
 /// ```
-/// use mvt::{BBox, Vec2};
+/// use mvt::BBox;
+/// use pointy::PtB;
 ///
-/// let north_west = Vec2::new(-10.0, 0.0);
-/// let south_east = Vec2::new(10.0, 8.0);
+/// let north_west = PtB(-10.0, 0.0);
+/// let south_east = PtB(10.0, 8.0);
 /// let bbox = BBox::new(north_west, south_east);
 /// ```
 #[derive(Clone, Copy, Debug)]
 pub struct BBox {
-    north_west: Vec2,
-    south_east: Vec2,
+    north_west: PtB,
+    south_east: PtB,
 }
 
 /// A tile ID identifies a tile on a map grid at a specific zoom level.
@@ -81,7 +82,7 @@ impl BBox {
     ///
     /// * `north_west` The north-west (top-left) corner of the bounds.
     /// * `south_east` The south-east (bottom-right) corner of the bounds.
-    pub fn new(north_west: Vec2, south_east: Vec2) -> Self {
+    pub fn new(north_west: PtB, south_east: PtB) -> Self {
         BBox {
             north_west,
             south_east,
@@ -90,32 +91,32 @@ impl BBox {
 
     /// Get the minimum X value.
     pub fn x_min(&self) -> f64 {
-        self.north_west.x.min(self.south_east.x)
+        self.north_west.x().min(self.south_east.x())
     }
 
     /// Get the maximum X value.
     pub fn x_max(&self) -> f64 {
-        self.north_west.x.max(self.south_east.x)
+        self.north_west.x().max(self.south_east.x())
     }
 
     /// Get the minimum Y value.
     pub fn y_min(&self) -> f64 {
-        self.north_west.y.min(self.south_east.y)
+        self.north_west.y().min(self.south_east.y())
     }
 
     /// Get the maximum Y value.
     pub fn y_max(&self) -> f64 {
-        self.north_west.y.max(self.south_east.y)
+        self.north_west.y().max(self.south_east.y())
     }
 
     /// Get the X span.
     fn x_span(&self) -> f64 {
-        self.south_east.x - self.north_west.x
+        self.south_east.x() - self.north_west.x()
     }
 
     /// Get the Y span.
     fn y_span(&self) -> f64 {
-        self.south_east.y - self.north_west.y
+        self.south_east.y() - self.north_west.y()
     }
 }
 
@@ -184,8 +185,8 @@ impl Default for MapGrid {
         const HALF_SIZE_M: f64 = 20_037_508.342_789_248;
         const WEB_MERCATOR_SRID: i32 = 3857;
         let srid = WEB_MERCATOR_SRID;
-        let north_west = Vec2::new(-HALF_SIZE_M, HALF_SIZE_M);
-        let south_east = Vec2::new(HALF_SIZE_M, -HALF_SIZE_M);
+        let north_west = PtB(-HALF_SIZE_M, HALF_SIZE_M);
+        let south_east = PtB(HALF_SIZE_M, -HALF_SIZE_M);
         let bbox = BBox::new(north_west, south_east);
         MapGrid { srid, bbox }
     }
@@ -215,24 +216,24 @@ impl MapGrid {
         let tz = SCALE[tid.z as usize];
         let sx = self.bbox.x_span() * tz;
         let sy = self.bbox.y_span() * tz;
-        let tx = self.bbox.north_west.x;
-        let ty = self.bbox.north_west.y;
-        let t = Transform::new_scale(sx, sy).translate(tx, ty);
+        let tx = self.bbox.north_west.x();
+        let ty = self.bbox.north_west.y();
+        let t = TransformB::with_scale(sx, sy).translate(tx, ty);
         let tidx = f64::from(tid.x);
         let tidy = f64::from(tid.y);
-        let north_west = t * Vec2::new(tidx, tidy);
-        let south_east = t * Vec2::new(tidx + 1.0, tidy + 1.0);
+        let north_west = t * PtB(tidx, tidy);
+        let south_east = t * PtB(tidx + 1.0, tidy + 1.0);
         BBox::new(north_west, south_east)
     }
 
     /// Get the transform to coördinates in 0 to 1 range.
-    pub fn tile_transform(&self, tid: TileId) -> Transform {
-        let tx = self.bbox.north_west.x;
-        let ty = self.bbox.north_west.y;
+    pub fn tile_transform(&self, tid: TileId) -> TransformB {
+        let tx = self.bbox.north_west.x();
+        let ty = self.bbox.north_west.y();
         let tz = f64::from(1 << tid.z);
         let sx = tz / self.bbox.x_span();
         let sy = tz / self.bbox.y_span();
-        Transform::new_translate(-tx, -ty)
+        TransformB::with_translate(-tx, -ty)
             .scale(sx, sy)
             .translate(-f64::from(tid.x), -f64::from(tid.y))
     }
@@ -241,6 +242,7 @@ impl MapGrid {
 #[cfg(test)]
 mod test {
     use super::*;
+
     #[test]
     fn test_tile_bbox() {
         let g = MapGrid::default();
@@ -248,38 +250,38 @@ mod test {
         let b = g.tile_bbox(tid);
         assert_eq!(
             b.north_west,
-            Vec2::new(-20037508.3427892480, 20037508.3427892480)
+            PtB(-20037508.3427892480, 20037508.3427892480)
         );
         assert_eq!(
             b.south_east,
-            Vec2::new(20037508.3427892480, -20037508.3427892480)
+            PtB(20037508.3427892480, -20037508.3427892480)
         );
 
         let tid = TileId::new(0, 0, 1).unwrap();
         let b = g.tile_bbox(tid);
         assert_eq!(
             b.north_west,
-            Vec2::new(-20037508.3427892480, 20037508.3427892480)
+            PtB(-20037508.3427892480, 20037508.3427892480)
         );
-        assert_eq!(b.south_east, Vec2::new(0.0, 0.0));
+        assert_eq!(b.south_east, PtB(0.0, 0.0));
 
         let tid = TileId::new(1, 1, 1).unwrap();
         let b = g.tile_bbox(tid);
-        assert_eq!(b.north_west, Vec2::new(0.0, 0.0));
+        assert_eq!(b.north_west, PtB(0.0, 0.0));
         assert_eq!(
             b.south_east,
-            Vec2::new(20037508.3427892480, -20037508.3427892480)
+            PtB(20037508.3427892480, -20037508.3427892480)
         );
 
         let tid = TileId::new(246, 368, 10).unwrap();
         let b = g.tile_bbox(tid);
         assert_eq!(
             b.north_west,
-            Vec2::new(-10410111.756214727, 5635549.221409475)
+            PtB(-10410111.756214727, 5635549.221409475)
         );
         assert_eq!(
             b.south_east,
-            Vec2::new(-10370975.997732716, 5596413.462927466)
+            PtB(-10370975.997732716, 5596413.462927466)
         );
     }
     #[test]
@@ -288,39 +290,39 @@ mod test {
         let tid = TileId::new(0, 0, 0).unwrap();
         let t = g.tile_transform(tid);
         assert_eq!(
-            Vec2::new(0.0, 0.0),
-            t * Vec2::new(-20037508.3427892480, 20037508.3427892480)
+            PtB(0.0, 0.0),
+            t * PtB(-20037508.3427892480, 20037508.3427892480)
         );
         assert_eq!(
-            Vec2::new(1.0, 1.0),
-            t * Vec2::new(20037508.3427892480, -20037508.3427892480)
+            PtB(1.0, 1.0),
+            t * PtB(20037508.3427892480, -20037508.3427892480)
         );
 
         let tid = TileId::new(0, 0, 1).unwrap();
         let t = g.tile_transform(tid);
         assert_eq!(
-            Vec2::new(0.0, 0.0),
-            t * Vec2::new(-20037508.3427892480, 20037508.3427892480)
+            PtB(0.0, 0.0),
+            t * PtB(-20037508.3427892480, 20037508.3427892480)
         );
-        assert_eq!(Vec2::new(1.0, 1.0), t * Vec2::new(0.0, 0.0));
+        assert_eq!(PtB(1.0, 1.0), t * PtB(0.0, 0.0));
 
         let tid = TileId::new(1, 1, 1).unwrap();
         let t = g.tile_transform(tid);
-        assert_eq!(Vec2::new(0.0, 0.0), t * Vec2::new(0.0, 0.0));
+        assert_eq!(PtB(0.0, 0.0), t * PtB(0.0, 0.0));
         assert_eq!(
-            Vec2::new(1.0, 1.0),
-            t * Vec2::new(20037508.3427892480, -20037508.3427892480)
+            PtB(1.0, 1.0),
+            t * PtB(20037508.3427892480, -20037508.3427892480)
         );
 
         let tid = TileId::new(246, 368, 10).unwrap();
         let t = g.tile_transform(tid);
         assert_eq!(
-            Vec2::new(0.0, 0.0),
-            t * Vec2::new(-10410111.756214727, 5635549.221409475)
+            PtB(0.0, 0.0),
+            t * PtB(-10410111.756214727, 5635549.221409475)
         );
         assert_eq!(
-            Vec2::new(1.0, 0.9999999999999716),
-            t * Vec2::new(-10370975.997732716, 5596413.462927466)
+            PtB(1.0, 0.9999999999999716),
+            t * PtB(-10370975.997732716, 5596413.462927466)
         );
     }
 }

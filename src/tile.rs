@@ -71,14 +71,15 @@ pub struct Layer {
 /// ```
 /// # use mvt::Error;
 /// # fn main() -> Result<(), Error> {
-/// use mvt::{GeomEncoder, GeomType, Tile, Transform};
+/// use mvt::{GeomEncoder, GeomType, Tile};
+/// use pointy::TransformB;
 ///
 /// let tile = Tile::new(4096);
 /// let layer = tile.create_layer("First Layer");
-/// let geom_data = GeomEncoder::new(GeomType::Point, Transform::new())
-///                             .point(1.0, 2.0)
-///                             .point(7.0, 6.0)
-///                             .encode()?;
+/// let geom_data = GeomEncoder::new(GeomType::Point, TransformB::default())
+///     .point(1.0, 2.0)
+///     .point(7.0, 6.0)
+///     .encode()?;
 /// let feature = layer.into_feature(geom_data);
 /// // ...
 /// // add any tags or ID to the feature

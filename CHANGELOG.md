@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Changed
+* Replaced `geom` module with `pointy` crate dependency
+
 ## [0.6.0] - 2020-09-18
 ### Changed
 * Implement Default for Layer
