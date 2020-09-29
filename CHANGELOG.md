@@ -1,5 +1,6 @@
 ## [Unreleased]
 
+## [0.7.0] - 2020-09-29
 ### Changed
 * Replaced `geom` module with `pointy` crate dependency
 
