@@ -5,7 +5,7 @@
 //! BBox, TileId and MapGrid structs.
 //!
 use crate::error::Error;
-use pointy::{PtB, TransformB};
+use pointy::{Pt64, Transform64};
 use std::fmt;
 
 /// A bounding box is an axis-aligned rectangle.
@@ -15,16 +15,16 @@ use std::fmt;
 /// # Example
 /// ```
 /// use mvt::BBox;
-/// use pointy::PtB;
+/// use pointy::Pt64;
 ///
-/// let north_west = PtB(-10.0, 0.0);
-/// let south_east = PtB(10.0, 8.0);
+/// let north_west = Pt64(-10.0, 0.0);
+/// let south_east = Pt64(10.0, 8.0);
 /// let bbox = BBox::new(north_west, south_east);
 /// ```
 #[derive(Clone, Copy, Debug)]
 pub struct BBox {
-    north_west: PtB,
-    south_east: PtB,
+    north_west: Pt64,
+    south_east: Pt64,
 }
 
 /// A tile ID identifies a tile on a map grid at a specific zoom level.
@@ -82,7 +82,7 @@ impl BBox {
     ///
     /// * `north_west` The north-west (top-left) corner of the bounds.
     /// * `south_east` The south-east (bottom-right) corner of the bounds.
-    pub fn new(north_west: PtB, south_east: PtB) -> Self {
+    pub fn new(north_west: Pt64, south_east: Pt64) -> Self {
         BBox {
             north_west,
             south_east,
@@ -185,8 +185,8 @@ impl Default for MapGrid {
         const HALF_SIZE_M: f64 = 20_037_508.342_789_248;
         const WEB_MERCATOR_SRID: i32 = 3857;
         let srid = WEB_MERCATOR_SRID;
-        let north_west = PtB(-HALF_SIZE_M, HALF_SIZE_M);
-        let south_east = PtB(HALF_SIZE_M, -HALF_SIZE_M);
+        let north_west = Pt64(-HALF_SIZE_M, HALF_SIZE_M);
+        let south_east = Pt64(HALF_SIZE_M, -HALF_SIZE_M);
         let bbox = BBox::new(north_west, south_east);
         MapGrid { srid, bbox }
     }
@@ -218,22 +218,22 @@ impl MapGrid {
         let sy = self.bbox.y_span() * tz;
         let tx = self.bbox.north_west.x();
         let ty = self.bbox.north_west.y();
-        let t = TransformB::with_scale(sx, sy).translate(tx, ty);
+        let t = Transform64::with_scale(sx, sy).translate(tx, ty);
         let tidx = f64::from(tid.x);
         let tidy = f64::from(tid.y);
-        let north_west = t * PtB(tidx, tidy);
-        let south_east = t * PtB(tidx + 1.0, tidy + 1.0);
+        let north_west = t * Pt64(tidx, tidy);
+        let south_east = t * Pt64(tidx + 1.0, tidy + 1.0);
         BBox::new(north_west, south_east)
     }
 
     /// Get the transform to coördinates in 0 to 1 range.
-    pub fn tile_transform(&self, tid: TileId) -> TransformB {
+    pub fn tile_transform(&self, tid: TileId) -> Transform64 {
         let tx = self.bbox.north_west.x();
         let ty = self.bbox.north_west.y();
         let tz = f64::from(1 << tid.z);
         let sx = tz / self.bbox.x_span();
         let sy = tz / self.bbox.y_span();
-        TransformB::with_translate(-tx, -ty)
+        Transform64::with_translate(-tx, -ty)
             .scale(sx, sy)
             .translate(-f64::from(tid.x), -f64::from(tid.y))
     }
@@ -250,39 +250,33 @@ mod test {
         let b = g.tile_bbox(tid);
         assert_eq!(
             b.north_west,
-            PtB(-20037508.3427892480, 20037508.3427892480)
+            Pt64(-20037508.3427892480, 20037508.3427892480)
         );
         assert_eq!(
             b.south_east,
-            PtB(20037508.3427892480, -20037508.3427892480)
+            Pt64(20037508.3427892480, -20037508.3427892480)
         );
 
         let tid = TileId::new(0, 0, 1).unwrap();
         let b = g.tile_bbox(tid);
         assert_eq!(
             b.north_west,
-            PtB(-20037508.3427892480, 20037508.3427892480)
+            Pt64(-20037508.3427892480, 20037508.3427892480)
         );
-        assert_eq!(b.south_east, PtB(0.0, 0.0));
+        assert_eq!(b.south_east, Pt64(0.0, 0.0));
 
         let tid = TileId::new(1, 1, 1).unwrap();
         let b = g.tile_bbox(tid);
-        assert_eq!(b.north_west, PtB(0.0, 0.0));
+        assert_eq!(b.north_west, Pt64(0.0, 0.0));
         assert_eq!(
             b.south_east,
-            PtB(20037508.3427892480, -20037508.3427892480)
+            Pt64(20037508.3427892480, -20037508.3427892480)
         );
 
         let tid = TileId::new(246, 368, 10).unwrap();
         let b = g.tile_bbox(tid);
-        assert_eq!(
-            b.north_west,
-            PtB(-10410111.756214727, 5635549.221409475)
-        );
-        assert_eq!(
-            b.south_east,
-            PtB(-10370975.997732716, 5596413.462927466)
-        );
+        assert_eq!(b.north_west, Pt64(-10410111.756214727, 5635549.221409475));
+        assert_eq!(b.south_east, Pt64(-10370975.997732716, 5596413.462927466));
     }
     #[test]
     fn test_tile_transform() {
@@ -290,39 +284,39 @@ mod test {
         let tid = TileId::new(0, 0, 0).unwrap();
         let t = g.tile_transform(tid);
         assert_eq!(
-            PtB(0.0, 0.0),
-            t * PtB(-20037508.3427892480, 20037508.3427892480)
+            Pt64(0.0, 0.0),
+            t * Pt64(-20037508.3427892480, 20037508.3427892480)
         );
         assert_eq!(
-            PtB(1.0, 1.0),
-            t * PtB(20037508.3427892480, -20037508.3427892480)
+            Pt64(1.0, 1.0),
+            t * Pt64(20037508.3427892480, -20037508.3427892480)
         );
 
         let tid = TileId::new(0, 0, 1).unwrap();
         let t = g.tile_transform(tid);
         assert_eq!(
-            PtB(0.0, 0.0),
-            t * PtB(-20037508.3427892480, 20037508.3427892480)
+            Pt64(0.0, 0.0),
+            t * Pt64(-20037508.3427892480, 20037508.3427892480)
         );
-        assert_eq!(PtB(1.0, 1.0), t * PtB(0.0, 0.0));
+        assert_eq!(Pt64(1.0, 1.0), t * Pt64(0.0, 0.0));
 
         let tid = TileId::new(1, 1, 1).unwrap();
         let t = g.tile_transform(tid);
-        assert_eq!(PtB(0.0, 0.0), t * PtB(0.0, 0.0));
+        assert_eq!(Pt64(0.0, 0.0), t * Pt64(0.0, 0.0));
         assert_eq!(
-            PtB(1.0, 1.0),
-            t * PtB(20037508.3427892480, -20037508.3427892480)
+            Pt64(1.0, 1.0),
+            t * Pt64(20037508.3427892480, -20037508.3427892480)
         );
 
         let tid = TileId::new(246, 368, 10).unwrap();
         let t = g.tile_transform(tid);
         assert_eq!(
-            PtB(0.0, 0.0),
-            t * PtB(-10410111.756214727, 5635549.221409475)
+            Pt64(0.0, 0.0),
+            t * Pt64(-10410111.756214727, 5635549.221409475)
         );
         assert_eq!(
-            PtB(1.0, 0.9999999999999716),
-            t * PtB(-10370975.997732716, 5596413.462927466)
+            Pt64(1.0, 0.9999999999999716),
+            t * Pt64(-10370975.997732716, 5596413.462927466)
         );
     }
 }

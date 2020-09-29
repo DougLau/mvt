@@ -5,7 +5,7 @@
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
 use crate::error::Error;
-use pointy::{PtB, TransformB};
+use pointy::Transform64;
 
 #[derive(Copy, Clone, Debug)]
 enum Command {
@@ -43,9 +43,9 @@ pub enum GeomType {
 /// # Example
 /// ```
 /// # use mvt::{Error, GeomEncoder, GeomType};
-/// # use pointy::TransformB;
+/// # use pointy::Transform64;
 /// # fn main() -> Result<(), Error> {
-/// let geom_data = GeomEncoder::new(GeomType::Point, TransformB::default())
+/// let geom_data = GeomEncoder::new(GeomType::Point, Transform64::default())
 ///     .point(0.0, 0.0)
 ///     .point(10.0, 0.0)
 ///     .encode()?;
@@ -53,7 +53,7 @@ pub enum GeomType {
 /// ```
 pub struct GeomEncoder {
     geom_tp: GeomType,
-    transform: TransformB,
+    transform: Transform64,
     x: i32,
     y: i32,
     cmd_offset: usize,
@@ -68,9 +68,9 @@ pub struct GeomEncoder {
 /// # Example
 /// ```
 /// # use mvt::{Error, GeomEncoder, GeomType};
-/// # use pointy::TransformB;
+/// # use pointy::Transform64;
 /// # fn main() -> Result<(), Error> {
-/// let geom_data = GeomEncoder::new(GeomType::Point, TransformB::default())
+/// let geom_data = GeomEncoder::new(GeomType::Point, Transform64::default())
 ///     .point(0.0, 0.0)
 ///     .point(10.0, 0.0)
 ///     .encode()?;
@@ -106,7 +106,7 @@ impl GeomEncoder {
     ///
     /// * `geom_tp` Geometry type.
     /// * `transform` Transform to apply to geometry.
-    pub fn new(geom_tp: GeomType, transform: TransformB) -> Self {
+    pub fn new(geom_tp: GeomType, transform: Transform64) -> Self {
         GeomEncoder {
             geom_tp,
             transform,
@@ -133,7 +133,7 @@ impl GeomEncoder {
 
     /// Push one point with relative coörindates.
     fn push_point(&mut self, x: f64, y: f64) {
-        let p = self.transform * PtB(x, y);
+        let p = self.transform * (x, y);
         let x = p.x() as i32;
         let y = p.y() as i32;
         self.data
@@ -246,7 +246,7 @@ mod test {
     // Examples from MVT spec:
     #[test]
     fn test_point() {
-        let v = GeomEncoder::new(GeomType::Point, TransformB::default())
+        let v = GeomEncoder::new(GeomType::Point, Transform64::default())
             .point(25.0, 17.0)
             .encode()
             .unwrap()
@@ -256,7 +256,7 @@ mod test {
 
     #[test]
     fn test_multipoint() {
-        let v = GeomEncoder::new(GeomType::Point, TransformB::default())
+        let v = GeomEncoder::new(GeomType::Point, Transform64::default())
             .point(5.0, 7.0)
             .point(3.0, 2.0)
             .encode()
@@ -267,7 +267,7 @@ mod test {
 
     #[test]
     fn test_linestring() {
-        let v = GeomEncoder::new(GeomType::Linestring, TransformB::default())
+        let v = GeomEncoder::new(GeomType::Linestring, Transform64::default())
             .point(2.0, 2.0)
             .point(2.0, 10.0)
             .point(10.0, 10.0)
@@ -279,7 +279,7 @@ mod test {
 
     #[test]
     fn test_multilinestring() {
-        let v = GeomEncoder::new(GeomType::Linestring, TransformB::default())
+        let v = GeomEncoder::new(GeomType::Linestring, Transform64::default())
             .point(2.0, 2.0)
             .point(2.0, 10.0)
             .point(10.0, 10.0)
@@ -295,7 +295,7 @@ mod test {
 
     #[test]
     fn test_polygon() {
-        let v = GeomEncoder::new(GeomType::Polygon, TransformB::default())
+        let v = GeomEncoder::new(GeomType::Polygon, Transform64::default())
             .point(3.0, 6.0)
             .point(8.0, 12.0)
             .point(20.0, 34.0)
@@ -307,7 +307,7 @@ mod test {
 
     #[test]
     fn test_multipolygon() {
-        let v = GeomEncoder::new(GeomType::Polygon, TransformB::default())
+        let v = GeomEncoder::new(GeomType::Polygon, Transform64::default())
             // positive area => exterior ring
             .point(0.0, 0.0)
             .point(10.0, 0.0)

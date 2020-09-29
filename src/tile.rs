@@ -72,11 +72,11 @@ pub struct Layer {
 /// # use mvt::Error;
 /// # fn main() -> Result<(), Error> {
 /// use mvt::{GeomEncoder, GeomType, Tile};
-/// use pointy::TransformB;
+/// use pointy::Transform64;
 ///
 /// let tile = Tile::new(4096);
 /// let layer = tile.create_layer("First Layer");
-/// let geom_data = GeomEncoder::new(GeomType::Point, TransformB::default())
+/// let geom_data = GeomEncoder::new(GeomType::Point, Transform64::default())
 ///     .point(1.0, 2.0)
 ///     .point(7.0, 6.0)
 ///     .encode()?;
