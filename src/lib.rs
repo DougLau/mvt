@@ -1,6 +1,6 @@
 // lib.rs      mvt crate.
 //
-// Copyright (c) 2019-2020  Minnesota Department of Transportation
+// Copyright (c) 2019-2021  Minnesota Department of Transportation
 //
 //! A library for encoding [mapbox vector tiles].
 //!
@@ -12,13 +12,13 @@
 //!
 //! ```rust
 //! use mvt::{Error, GeomEncoder, GeomType, Tile};
-//! use pointy::Transform64;
+//! use pointy::Transform;
 //!
 //! fn main() -> Result<(), Error> {
 //!     let mut tile = Tile::new(4096);
 //!     let layer = tile.create_layer("First Layer");
 //!     // NOTE: normally, the Transform would come from MapGrid::tile_transform
-//!     let b = GeomEncoder::new(GeomType::Linestring, Transform64::default())
+//!     let b = GeomEncoder::new(GeomType::Linestring, Transform::default())
 //!         .point(0.0, 0.0)
 //!         .point(1024.0, 0.0)
 //!         .point(1024.0, 2048.0)
@@ -53,5 +53,5 @@ mod vector_tile;
 
 pub use crate::encoder::{GeomData, GeomEncoder, GeomType};
 pub use crate::error::Error;
-pub use crate::mapgrid::{BBox, MapGrid, TileId};
+pub use crate::mapgrid::{MapGrid, TileId};
 pub use crate::tile::{Feature, Layer, Tile};
