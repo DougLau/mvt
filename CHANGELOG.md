@@ -2,6 +2,7 @@
 
 ### Changed
 * Moved `BBox` to `pointy` crate
+* Updated `protobuf` dependency to version 2.25
 
 ## [0.7.0] - 2020-09-29
 ### Changed

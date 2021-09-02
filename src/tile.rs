@@ -1,6 +1,6 @@
 // tile.rs
 //
-// Copyright (c) 2019-2020  Minnesota Department of Transportation
+// Copyright (c) 2019-2021  Minnesota Department of Transportation
 //
 //! Tile, Layer and Feature structs.
 //!
@@ -8,8 +8,7 @@ use crate::encoder::{GeomData, GeomType};
 use crate::error::Error;
 use crate::vector_tile::Tile as VecTile;
 use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
-use protobuf::stream::CodedOutputStream;
-use protobuf::Message;
+use protobuf::{CodedOutputStream, Message};
 use std::io::Write;
 
 /// A tile represents a rectangular region of a map.
