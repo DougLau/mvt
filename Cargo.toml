@@ -12,6 +12,7 @@ edition = "2018"
 
 [dependencies]
 log = "0.4"
+num-traits = "0.2"
 pointy = "0.3"
 protobuf = "~2.25"
 protobuf-codegen-pure = { version = "2.25", optional = true }

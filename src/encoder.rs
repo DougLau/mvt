@@ -4,8 +4,9 @@
 //
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
+use crate::error::{Error, Result};
+use num_traits::ToPrimitive;
 use pointy::Transform;
-use crate::error::Result;
 
 #[derive(Copy, Clone, Debug)]
 enum Command {
@@ -46,8 +47,8 @@ pub enum GeomType {
 /// # use pointy::Transform;
 /// # fn main() -> Result<(), Error> {
 /// let geom_data = GeomEncoder::new(GeomType::Point, Transform::default())
-///     .point(0.0, 0.0)
-///     .point(10.0, 0.0)
+///     .point(0.0, 0.0)?
+///     .point(10.0, 0.0)?
 ///     .encode()?;
 /// # Ok(()) }
 /// ```
@@ -71,8 +72,8 @@ pub struct GeomEncoder {
 /// # use pointy::Transform;
 /// # fn main() -> Result<(), Error> {
 /// let geom_data = GeomEncoder::new(GeomType::Point, Transform::default())
-///     .point(0.0, 0.0)
-///     .point(10.0, 0.0)
+///     .point(0.0, 0.0)?
+///     .point(10.0, 0.0)?
 ///     .encode()?;
 /// # Ok(()) }
 /// ```
@@ -132,10 +133,10 @@ impl GeomEncoder {
     }
 
     /// Push one point with relative coörindates.
-    fn push_point(&mut self, x: f64, y: f64) {
+    fn push_point(&mut self, x: f64, y: f64) -> Result<()> {
         let p = self.transform * (x, y);
-        let x = p.x() as i32;
-        let y = p.y() as i32;
+        let x = p.x().to_i32().ok_or(Error::InvalidValue())?;
+        let y = p.y().to_i32().ok_or(Error::InvalidValue())?;
         self.data
             .push(ParamInt::new(x.saturating_sub(self.x)).encode());
         self.data
@@ -143,10 +144,11 @@ impl GeomEncoder {
         debug!("point: {},{}", x, y);
         self.x = x;
         self.y = y;
+        Ok(())
     }
 
     /// Add a point.
-    pub fn add_point(&mut self, x: f64, y: f64) {
+    pub fn add_point(&mut self, x: f64, y: f64) -> Result<()> {
         match self.geom_tp {
             GeomType::Point => {
                 if self.count == 0 {
@@ -164,14 +166,15 @@ impl GeomEncoder {
                 _ => (),
             },
         }
-        self.push_point(x, y);
+        self.push_point(x, y)?;
         self.count += 1;
+        Ok(())
     }
 
     /// Add a point, taking ownership (for method chaining).
-    pub fn point(mut self, x: f64, y: f64) -> Self {
-        self.add_point(x, y);
-        self
+    pub fn point(mut self, x: f64, y: f64) -> Result<Self> {
+        self.add_point(x, y)?;
+        Ok(self)
     }
 
     /// Complete the current geometry (for multilinestring / multipolygon).
@@ -248,6 +251,7 @@ mod test {
     fn test_point() {
         let v = GeomEncoder::new(GeomType::Point, Transform::default())
             .point(25.0, 17.0)
+            .unwrap()
             .encode()
             .unwrap()
             .into_vec();
@@ -258,7 +262,9 @@ mod test {
     fn test_multipoint() {
         let v = GeomEncoder::new(GeomType::Point, Transform::default())
             .point(5.0, 7.0)
+            .unwrap()
             .point(3.0, 2.0)
+            .unwrap()
             .encode()
             .unwrap()
             .into_vec();
@@ -269,8 +275,11 @@ mod test {
     fn test_linestring() {
         let v = GeomEncoder::new(GeomType::Linestring, Transform::default())
             .point(2.0, 2.0)
+            .unwrap()
             .point(2.0, 10.0)
+            .unwrap()
             .point(10.0, 10.0)
+            .unwrap()
             .encode()
             .unwrap()
             .into_vec();
@@ -281,12 +290,17 @@ mod test {
     fn test_multilinestring() {
         let v = GeomEncoder::new(GeomType::Linestring, Transform::default())
             .point(2.0, 2.0)
+            .unwrap()
             .point(2.0, 10.0)
+            .unwrap()
             .point(10.0, 10.0)
+            .unwrap()
             .complete()
             .unwrap()
             .point(1.0, 1.0)
+            .unwrap()
             .point(3.0, 5.0)
+            .unwrap()
             .encode()
             .unwrap()
             .into_vec();
@@ -297,8 +311,11 @@ mod test {
     fn test_polygon() {
         let v = GeomEncoder::new(GeomType::Polygon, Transform::default())
             .point(3.0, 6.0)
+            .unwrap()
             .point(8.0, 12.0)
+            .unwrap()
             .point(20.0, 34.0)
+            .unwrap()
             .encode()
             .unwrap()
             .into_vec();
@@ -310,23 +327,35 @@ mod test {
         let v = GeomEncoder::new(GeomType::Polygon, Transform::default())
             // positive area => exterior ring
             .point(0.0, 0.0)
+            .unwrap()
             .point(10.0, 0.0)
+            .unwrap()
             .point(10.0, 10.0)
+            .unwrap()
             .point(0.0, 10.0)
+            .unwrap()
             .complete()
             .unwrap()
             // positive area => exterior ring
             .point(11.0, 11.0)
+            .unwrap()
             .point(20.0, 11.0)
+            .unwrap()
             .point(20.0, 20.0)
+            .unwrap()
             .point(11.0, 20.0)
+            .unwrap()
             .complete()
             .unwrap()
             // negative area => interior ring
             .point(13.0, 13.0)
+            .unwrap()
             .point(13.0, 17.0)
+            .unwrap()
             .point(17.0, 17.0)
+            .unwrap()
             .point(17.0, 13.0)
+            .unwrap()
             .encode()
             .unwrap()
             .into_vec();

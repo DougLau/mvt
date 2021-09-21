@@ -24,6 +24,10 @@ pub enum Error {
     #[error("Invalid geometry data")]
     InvalidGeometry(),
 
+    /// Invalid float value
+    #[error("Invalid float value")]
+    InvalidValue(),
+
     /// Error while encoding protobuf data.
     #[error("Protobuf error {0}")]
     Protobuf(#[from] ProtobufError),

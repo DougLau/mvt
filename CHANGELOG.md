@@ -3,6 +3,7 @@
 ### Changed
 * Moved `BBox` to `pointy` crate
 * Updated `protobuf` dependency to version 2.25
+* `GeomEncoder::point` / `add_point` are now fallible (float to int errors)
 
 ## [0.7.0] - 2020-09-29
 ### Changed
