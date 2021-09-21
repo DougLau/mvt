@@ -4,7 +4,7 @@
 //
 //! TileId and MapGrid structs.
 //!
-use crate::error::Error;
+use crate::error::{Error, Result};
 use pointy::{BBox, Pt, Transform};
 use std::fmt;
 
@@ -31,6 +31,7 @@ pub struct TileId {
 pub struct MapGrid {
     /// Spatial reference ID
     srid: i32,
+
     /// Bounding box
     bbox: BBox<f64>,
 }
@@ -99,13 +100,13 @@ impl TileId {
     /// Create a new TildId.
     ///
     /// If invalid, returns [Error::InvalidTid](enum.Error.html).
-    pub fn new(x: u32, y: u32, z: u32) -> Result<Self, Error> {
+    pub fn new(x: u32, y: u32, z: u32) -> Result<Self> {
         TileId::check_valid(x, y, z)?;
         Ok(TileId { x, y, z })
     }
 
     /// Check whether a tile ID is valid.
-    fn check_valid(x: u32, y: u32, z: u32) -> Result<(), Error> {
+    fn check_valid(x: u32, y: u32, z: u32) -> Result<()> {
         if z > 31 {
             return Err(Error::InvalidTid());
         }

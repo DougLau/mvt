@@ -1,49 +1,33 @@
 // error.rs
 //
-// Copyright (c) 2019-2020  Minnesota Department of Transportation
+// Copyright (c) 2019-2021  Minnesota Department of Transportation
 //
 use protobuf::error::ProtobufError;
-use std::fmt;
 
 /// MVT Error types
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// The tile already contains a layer with the specified name.
+    #[error("Duplicate name")]
     DuplicateName(),
+
     /// The layer extent does not match the tile extent.
+    #[error("Wrong layer extent")]
     WrongExtent(),
+
     /// The tile ID is invalid.
+    #[error("Invalid tile ID")]
     InvalidTid(),
+
     /// The geometry does not meet criteria of the specification.
+    #[error("Invalid geometry data")]
     InvalidGeometry(),
+
     /// Error while encoding protobuf data.
-    Protobuf(ProtobufError),
+    #[error("Protobuf error {0}")]
+    Protobuf(#[from] ProtobufError),
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Error::DuplicateName() => write!(f, "Name already exists"),
-            Error::WrongExtent() => write!(f, "Wrong layer extent"),
-            Error::InvalidTid() => write!(f, "Invalid tile ID"),
-            Error::InvalidGeometry() => write!(f, "Invalid geometry data"),
-            Error::Protobuf(e) => write!(f, "Protobuf {:?}", e),
-        }
-    }
-}
-
-impl std::error::Error for Error {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Error::Protobuf(p) => Some(p),
-            _ => None,
-        }
-    }
-}
-
-impl From<ProtobufError> for Error {
-    fn from(e: ProtobufError) -> Self {
-        Error::Protobuf(e)
-    }
-}
+/// MVT Result
+pub type Result<T> = std::result::Result<T, Error>;

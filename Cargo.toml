@@ -4,7 +4,6 @@ version = "0.7.0"
 description = "A library for encoding mapbox vector tiles"
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/mvt"
-homepage = "https://github.com/DougLau/mvt"
 repository = "https://github.com/DougLau/mvt"
 readme = "README.md"
 keywords = ["cartography", "gis", "vector", "tile", "mapbox"]
@@ -16,6 +15,7 @@ log = "0.4"
 pointy = "0.3"
 protobuf = "~2.25"
 protobuf-codegen-pure = { version = "2.25", optional = true }
+thiserror = "1"
 
 [features]
 update = ["protobuf-codegen-pure"]

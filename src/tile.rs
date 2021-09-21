@@ -5,7 +5,7 @@
 //! Tile, Layer and Feature structs.
 //!
 use crate::encoder::{GeomData, GeomType};
-use crate::error::Error;
+use crate::error::{Error, Result};
 use crate::vector_tile::Tile as VecTile;
 use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
 use protobuf::{CodedOutputStream, Message};
@@ -130,7 +130,7 @@ impl Tile {
     /// Returns an error if:
     /// * a layer with the same name already exists
     /// * the layer extent does not match the tile extent
-    pub fn add_layer(&mut self, layer: Layer) -> Result<(), Error> {
+    pub fn add_layer(&mut self, layer: Layer) -> Result<()> {
         if layer.layer.get_extent() != self.extent {
             return Err(Error::WrongExtent());
         }
@@ -150,7 +150,7 @@ impl Tile {
     /// Write the tile.
     ///
     /// * `out` Writer to output the tile.
-    pub fn write_to(&self, mut out: &mut dyn Write) -> Result<(), Error> {
+    pub fn write_to(&self, mut out: &mut dyn Write) -> Result<()> {
         let mut os = CodedOutputStream::new(&mut out);
         let _ = self.vec_tile.write_to(&mut os);
         os.flush()?;
@@ -158,7 +158,7 @@ impl Tile {
     }
 
     /// Encode the tile and return the bytes.
-    pub fn to_bytes(&self) -> Result<Vec<u8>, Error> {
+    pub fn to_bytes(&self) -> Result<Vec<u8>> {
         let mut v = Vec::with_capacity(self.compute_size());
         self.write_to(&mut v)?;
         Ok(v)

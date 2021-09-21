@@ -4,8 +4,8 @@
 //
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
-use crate::error::Error;
 use pointy::Transform;
+use crate::error::Result;
 
 #[derive(Copy, Clone, Debug)]
 enum Command {
@@ -175,7 +175,7 @@ impl GeomEncoder {
     }
 
     /// Complete the current geometry (for multilinestring / multipolygon).
-    pub fn complete_geom(&mut self) -> Result<(), Error> {
+    pub fn complete_geom(&mut self) -> Result<()> {
         // FIXME: return Error::InvalidGeometry
         //        if "MUST" rules in the spec are violated
         match self.geom_tp {
@@ -198,13 +198,13 @@ impl GeomEncoder {
     }
 
     /// Complete the current geometry (for multilinestring / multipolygon).
-    pub fn complete(mut self) -> Result<Self, Error> {
+    pub fn complete(mut self) -> Result<Self> {
         self.complete_geom()?;
         Ok(self)
     }
 
     /// Encode the geometry data, consuming the encoder.
-    pub fn encode(mut self) -> Result<GeomData, Error> {
+    pub fn encode(mut self) -> Result<GeomData> {
         // FIXME: return Error::InvalidGeometry
         //        if "MUST" rules in the spec are violated
         self = if let GeomType::Point = self.geom_tp {
