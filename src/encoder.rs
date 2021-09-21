@@ -5,8 +5,7 @@
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
 use crate::error::{Error, Result};
-use num_traits::ToPrimitive;
-use pointy::Transform;
+use pointy::{Float, Transform};
 
 #[derive(Copy, Clone, Debug)]
 enum Command {
@@ -52,9 +51,12 @@ pub enum GeomType {
 ///     .encode()?;
 /// # Ok(()) }
 /// ```
-pub struct GeomEncoder {
+pub struct GeomEncoder<F>
+where
+    F: Float,
+{
     geom_tp: GeomType,
-    transform: Transform<f64>,
+    transform: Transform<F>,
     x: i32,
     y: i32,
     cmd_offset: usize,
@@ -102,12 +104,15 @@ impl ParamInt {
     }
 }
 
-impl GeomEncoder {
+impl<F> GeomEncoder<F>
+where
+    F: Float,
+{
     /// Create a new geometry encoder.
     ///
     /// * `geom_tp` Geometry type.
     /// * `transform` Transform to apply to geometry.
-    pub fn new(geom_tp: GeomType, transform: Transform<f64>) -> Self {
+    pub fn new(geom_tp: GeomType, transform: Transform<F>) -> Self {
         GeomEncoder {
             geom_tp,
             transform,
@@ -133,7 +138,7 @@ impl GeomEncoder {
     }
 
     /// Push one point with relative coörindates.
-    fn push_point(&mut self, x: f64, y: f64) -> Result<()> {
+    fn push_point(&mut self, x: F, y: F) -> Result<()> {
         let p = self.transform * (x, y);
         let x = p.x().to_i32().ok_or(Error::InvalidValue())?;
         let y = p.y().to_i32().ok_or(Error::InvalidValue())?;
@@ -148,7 +153,7 @@ impl GeomEncoder {
     }
 
     /// Add a point.
-    pub fn add_point(&mut self, x: f64, y: f64) -> Result<()> {
+    pub fn add_point(&mut self, x: F, y: F) -> Result<()> {
         match self.geom_tp {
             GeomType::Point => {
                 if self.count == 0 {
@@ -172,7 +177,7 @@ impl GeomEncoder {
     }
 
     /// Add a point, taking ownership (for method chaining).
-    pub fn point(mut self, x: f64, y: f64) -> Result<Self> {
+    pub fn point(mut self, x: F, y: F) -> Result<Self> {
         self.add_point(x, y)?;
         Ok(self)
     }
