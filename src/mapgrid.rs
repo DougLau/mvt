@@ -5,8 +5,23 @@
 //! TileId and MapGrid structs.
 //!
 use crate::error::{Error, Result};
-use pointy::{BBox, Pt, Transform};
+use num_traits::FromPrimitive;
+use pointy::{BBox, Float, Pt, Transform};
 use std::fmt;
+
+/// Web Mercator map constants
+pub trait MapConst {
+    /// Half size of map (meters)
+    const HALF_SIZE_M: Self;
+}
+
+impl MapConst for f32 {
+    const HALF_SIZE_M: Self = 20_037_508.342_789_248;
+}
+
+impl MapConst for f64 {
+    const HALF_SIZE_M: Self = 20_037_508.342_789_248;
+}
 
 /// A tile ID identifies a tile on a map grid at a specific zoom level.
 ///
@@ -28,12 +43,15 @@ pub struct TileId {
 /// [tile]: struct.Tile.html
 /// [Web Mercator]: https://en.wikipedia.org/wiki/Web_Mercator_projection
 #[derive(Clone, Debug)]
-pub struct MapGrid {
+pub struct MapGrid<F>
+where
+    F: Float,
+{
     /// Spatial reference ID
     srid: i32,
 
     /// Bounding box
-    bbox: BBox<f64>,
+    bbox: BBox<F>,
 }
 
 impl TileId {
@@ -59,43 +77,6 @@ impl fmt::Display for TileId {
     }
 }
 
-/// Scales at each zoom level.
-const SCALE: [f64; 32] = [
-    // Someday, we can use const fn...
-    1.0 / (1 << 0) as f64,
-    1.0 / (1 << 1) as f64,
-    1.0 / (1 << 2) as f64,
-    1.0 / (1 << 3) as f64,
-    1.0 / (1 << 4) as f64,
-    1.0 / (1 << 5) as f64,
-    1.0 / (1 << 6) as f64,
-    1.0 / (1 << 7) as f64,
-    1.0 / (1 << 8) as f64,
-    1.0 / (1 << 9) as f64,
-    1.0 / (1 << 10) as f64,
-    1.0 / (1 << 11) as f64,
-    1.0 / (1 << 12) as f64,
-    1.0 / (1 << 13) as f64,
-    1.0 / (1 << 14) as f64,
-    1.0 / (1 << 15) as f64,
-    1.0 / (1 << 16) as f64,
-    1.0 / (1 << 17) as f64,
-    1.0 / (1 << 18) as f64,
-    1.0 / (1 << 19) as f64,
-    1.0 / (1 << 20) as f64,
-    1.0 / (1 << 21) as f64,
-    1.0 / (1 << 22) as f64,
-    1.0 / (1 << 23) as f64,
-    1.0 / (1 << 24) as f64,
-    1.0 / (1 << 25) as f64,
-    1.0 / (1 << 26) as f64,
-    1.0 / (1 << 27) as f64,
-    1.0 / (1 << 28) as f64,
-    1.0 / (1 << 29) as f64,
-    1.0 / (1 << 30) as f64,
-    1.0 / (1 << 31) as f64,
-];
-
 impl TileId {
     /// Create a new TildId.
     ///
@@ -119,24 +100,29 @@ impl TileId {
     }
 }
 
-impl Default for MapGrid {
+impl<F> Default for MapGrid<F>
+where
+    F: Float + MapConst,
+{
     fn default() -> Self {
-        const HALF_SIZE_M: f64 = 20_037_508.342_789_248;
         const WEB_MERCATOR_SRID: i32 = 3857;
         let srid = WEB_MERCATOR_SRID;
-        let p0 = Pt::new(-HALF_SIZE_M, -HALF_SIZE_M);
-        let p1 = Pt::new(HALF_SIZE_M, HALF_SIZE_M);
+        let p0 = Pt::new(-F::HALF_SIZE_M, -F::HALF_SIZE_M);
+        let p1 = Pt::new(F::HALF_SIZE_M, F::HALF_SIZE_M);
         let bbox = BBox::from((p0, p1));
-        MapGrid { srid, bbox }
+        Self { srid, bbox }
     }
 }
 
-impl MapGrid {
+impl<F> MapGrid<F>
+where
+    F: Float + FromPrimitive,
+{
     /// Create a new map grid.
     ///
     /// * `srid` Spatial reference ID.
     /// * `bbox` Bounding box.
-    pub fn new(srid: i32, bbox: BBox<f64>) -> Self {
+    pub fn new(srid: i32, bbox: BBox<F>) -> Self {
         MapGrid { srid, bbox }
     }
 
@@ -146,36 +132,46 @@ impl MapGrid {
     }
 
     /// Get the bounding box of the grid.
-    pub fn bbox(&self) -> BBox<f64> {
+    pub fn bbox(&self) -> BBox<F> {
         self.bbox
     }
 
     /// Get the bounding box of a tile ID.
-    pub fn tile_bbox(&self, tid: TileId) -> BBox<f64> {
+    pub fn tile_bbox(&self, tid: TileId) -> BBox<F> {
         let tx = self.bbox.x_min(); // west edge
         let ty = self.bbox.y_max(); // north edge
-        let tz = SCALE[tid.z as usize];
+        let tz = zoom_scale(tid.z);
         let sx = self.bbox.x_span() * tz;
         let sy = self.bbox.y_span() * tz;
         let t = Transform::with_scale(sx, -sy).translate(tx, ty);
-        let tidx = f64::from(tid.x);
-        let tidy = f64::from(tid.y);
+        let tidx = F::from_u32(tid.x).unwrap();
+        let tidy = F::from_u32(tid.y).unwrap();
         let p0 = t * Pt::new(tidx, tidy);
-        let p1 = t * Pt::new(tidx + 1.0, tidy + 1.0);
+        let p1 = t * Pt::new(tidx + F::one(), tidy + F::one());
         BBox::from((p0, p1))
     }
 
     /// Get the transform to coördinates in 0 to 1 range.
-    pub fn tile_transform(&self, tid: TileId) -> Transform<f64> {
+    pub fn tile_transform(&self, tid: TileId) -> Transform<F> {
         let tx = self.bbox.x_min(); // west edge
         let ty = self.bbox.y_max(); // north edge
-        let tz = f64::from(1 << tid.z);
+        let tz = F::from_u32(1 << tid.z).unwrap();
         let sx = tz / self.bbox.x_span();
         let sy = tz / self.bbox.y_span();
+        let tidx = F::from_u32(tid.x).unwrap();
+        let tidy = F::from_u32(tid.y).unwrap();
         Transform::with_translate(-tx, -ty)
             .scale(sx, -sy)
-            .translate(-f64::from(tid.x), -f64::from(tid.y))
+            .translate(-tidx, -tidy)
     }
+}
+
+/// Calculate scales at one zoom level.
+fn zoom_scale<F>(zoom: u32) -> F
+where
+    F: Float + FromPrimitive,
+{
+    F::one() / F::from_u32(1 << zoom).unwrap()
 }
 
 #[cfg(test)]
@@ -184,7 +180,7 @@ mod test {
 
     #[test]
     fn test_tile_bbox() {
-        let g = MapGrid::default();
+        let g = MapGrid::<f64>::default();
         let tid = TileId::new(0, 0, 0).unwrap();
         let b = g.tile_bbox(tid);
         assert_eq!(b.x_min(), -20037508.3427892480);

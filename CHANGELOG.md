@@ -4,6 +4,7 @@
 * Moved `BBox` to `pointy` crate
 * `GeomEncoder::point` / `add_point` are now fallible (float to int errors)
 * `GeomEncoder` now has a `Float` type parameter (`f32` or `f64`)
+* `MapGrid` now has a `Float` type parameter (`f32` or `f64`)
 * Updated `protobuf` dependency to version 2.25
 
 ## [0.7.0] - 2020-09-29
