@@ -30,8 +30,10 @@ struct ParamInt {
 pub enum GeomType {
     /// Point or multipoint
     Point,
+
     /// Linestring or Multilinestring
     Linestring,
+
     /// Polygon or Multipolygon
     Polygon,
 }
@@ -140,8 +142,8 @@ where
     /// Push one point with relative coörindates.
     fn push_point(&mut self, x: F, y: F) -> Result<()> {
         let p = self.transform * (x, y);
-        let x = p.x().to_i32().ok_or(Error::InvalidValue())?;
-        let y = p.y().to_i32().ok_or(Error::InvalidValue())?;
+        let x = p.x().round().to_i32().ok_or(Error::InvalidValue())?;
+        let y = p.y().round().to_i32().ok_or(Error::InvalidValue())?;
         self.data
             .push(ParamInt::new(x.saturating_sub(self.x)).encode());
         self.data
