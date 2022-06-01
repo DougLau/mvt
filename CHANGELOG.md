@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+### Added
+* `GeomData::is_empty` / `GeomData::len` methods
 ### Changed
 * Moved `BBox` to `pointy` crate
 * `GeomEncoder::point` / `add_point` are now fallible (float to int errors)
