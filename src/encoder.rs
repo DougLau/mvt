@@ -1,6 +1,6 @@
 // encoder.rs
 //
-// Copyright (c) 2019-2021  Minnesota Department of Transportation
+// Copyright (c) 2019-2022  Minnesota Department of Transportation
 //
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
@@ -241,6 +241,16 @@ impl GeomData {
     /// Get the geometry type
     pub(crate) fn geom_type(&self) -> GeomType {
         self.geom_tp
+    }
+
+    /// Check if data is empty
+    pub fn is_empty(&self) -> bool {
+        self.data.is_empty()
+    }
+
+    /// Get length of data
+    pub fn len(&self) -> usize {
+        self.data.len()
     }
 
     /// Get the geometry data
