@@ -26,7 +26,7 @@ struct ParamInt {
 }
 
 /// Geometry types for [Features](struct.Feature.html).
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum GeomType {
     /// Point or multipoint
     Point,
