@@ -1,14 +1,16 @@
 // tile.rs
 //
-// Copyright (c) 2019-2021  Minnesota Department of Transportation
+// Copyright (c) 2019-2022  Minnesota Department of Transportation
 //
 //! Tile, Layer and Feature structs.
 //!
 use crate::encoder::{GeomData, GeomType};
 use crate::error::{Error, Result};
+use crate::vector_tile::tile::{
+    Feature as VtFeature, GeomType as VtGeomType, Layer as VtLayer, Value,
+};
 use crate::vector_tile::Tile as VecTile;
-use crate::vector_tile::{Tile_Feature, Tile_GeomType, Tile_Layer, Tile_Value};
-use protobuf::{CodedOutputStream, Message};
+use protobuf::{CodedOutputStream, EnumOrUnknown, Message};
 use std::io::Write;
 
 /// A tile represents a rectangular region of a map.
@@ -57,7 +59,7 @@ pub struct Tile {
 /// // ...
 /// ```
 pub struct Layer {
-    layer: Tile_Layer,
+    layer: VtLayer,
 }
 
 /// A Feature contains map geometry with related metadata.
@@ -91,7 +93,7 @@ pub struct Layer {
 /// [Layer.into_feature]: struct.Layer.html#method.into_feature
 /// [Feature.into_layer]: struct.Feature.html#method.into_layer
 pub struct Feature {
-    feature: Tile_Feature,
+    feature: VtFeature,
     layer: Layer,
     num_keys: usize,
     num_values: usize,
@@ -113,7 +115,7 @@ impl Tile {
 
     /// Get the number of layers.
     pub fn num_layers(&self) -> usize {
-        self.vec_tile.get_layers().len()
+        self.vec_tile.layers.len()
     }
 
     /// Create a new layer.
@@ -131,18 +133,18 @@ impl Tile {
     /// * a layer with the same name already exists
     /// * the layer extent does not match the tile extent
     pub fn add_layer(&mut self, layer: Layer) -> Result<()> {
-        if layer.layer.get_extent() != self.extent {
+        if layer.layer.extent != Some(self.extent) {
             return Err(Error::WrongExtent());
         }
         if self
             .vec_tile
-            .get_layers()
+            .layers
             .iter()
-            .any(|n| n.get_name() == layer.layer.get_name())
+            .any(|n| n.name == layer.layer.name)
         {
             Err(Error::DuplicateName())
         } else {
-            self.vec_tile.mut_layers().push(layer.layer);
+            self.vec_tile.layers.push(layer.layer);
             Ok(())
         }
     }
@@ -172,7 +174,7 @@ impl Tile {
 
 impl Default for Layer {
     fn default() -> Self {
-        let layer = Tile_Layer::new();
+        let layer = VtLayer::new();
         Layer { layer }
     }
 }
@@ -183,7 +185,7 @@ impl Layer {
     /// * `name` Layer name.
     /// * `extent` Width / height of tile bounds.
     fn new(name: &str, extent: u32) -> Self {
-        let mut layer = Tile_Layer::new();
+        let mut layer = VtLayer::new();
         layer.set_version(2);
         layer.set_name(name.to_string());
         layer.set_extent(extent);
@@ -191,28 +193,28 @@ impl Layer {
     }
 
     /// Get the layer name.
-    pub fn name(&self) -> &str {
-        self.layer.get_name()
+    pub fn name(&self) -> Option<&str> {
+        self.layer.name.as_deref()
     }
 
     /// Get number of features (count).
     pub fn num_features(&self) -> usize {
-        self.layer.get_features().len()
+        self.layer.features.len()
     }
 
     /// Create a new feature, giving it ownership of the layer.
     ///
     /// * `geom_data` Geometry data (consumed by this method).
     pub fn into_feature(self, geom_data: GeomData) -> Feature {
-        let num_keys = self.layer.get_keys().len();
-        let num_values = self.layer.get_values().len();
-        let mut feature = Tile_Feature::new();
-        feature.set_field_type(match geom_data.geom_type() {
-            GeomType::Point => Tile_GeomType::POINT,
-            GeomType::Linestring => Tile_GeomType::LINESTRING,
-            GeomType::Polygon => Tile_GeomType::POLYGON,
-        });
-        feature.set_geometry(geom_data.into_vec());
+        let num_keys = self.layer.keys.len();
+        let num_values = self.layer.values.len();
+        let mut feature = VtFeature::new();
+        feature.type_ = Some(EnumOrUnknown::new(match geom_data.geom_type() {
+            GeomType::Point => VtGeomType::POINT,
+            GeomType::Linestring => VtGeomType::LINESTRING,
+            GeomType::Polygon => VtGeomType::POLYGON,
+        }));
+        feature.geometry = geom_data.into_vec();
         Feature {
             feature,
             layer: self,
@@ -225,25 +227,25 @@ impl Layer {
     /// is added as the last key.
     fn key_pos(&mut self, key: &str) -> usize {
         self.layer
-            .get_keys()
+            .keys
             .iter()
             .position(|k| *k == key)
             .unwrap_or_else(|| {
-                self.layer.mut_keys().push(key.to_string());
-                self.layer.get_keys().len() - 1
+                self.layer.keys.push(key.to_string());
+                self.layer.keys.len() - 1
             })
     }
 
     /// Get position of a value in the layer values.  If the value is not found,
     /// it is added as the last value.
-    fn val_pos(&mut self, value: Tile_Value) -> usize {
+    fn val_pos(&mut self, value: Value) -> usize {
         self.layer
-            .get_values()
+            .values
             .iter()
             .position(|v| *v == value)
             .unwrap_or_else(|| {
-                self.layer.mut_values().push(value);
-                self.layer.get_values().len() - 1
+                self.layer.values.push(value);
+                self.layer.values.len() - 1
             })
     }
 }
@@ -251,90 +253,86 @@ impl Layer {
 impl Feature {
     /// Complete the feature, returning ownership of the layer.
     pub fn into_layer(mut self) -> Layer {
-        self.layer.layer.mut_features().push(self.feature);
+        self.layer.layer.features.push(self.feature);
         self.layer
     }
 
     /// Get the layer, abandoning the feature.
     pub fn layer(mut self) -> Layer {
         // Reset key/value lengths
-        self.layer.layer.mut_keys().truncate(self.num_keys);
-        self.layer.layer.mut_values().truncate(self.num_values);
+        self.layer.layer.keys.truncate(self.num_keys);
+        self.layer.layer.values.truncate(self.num_values);
         self.layer
     }
 
     /// Set the feature ID.
     pub fn set_id(&mut self, id: u64) {
         let layer = &self.layer.layer;
-        if layer.get_features().iter().any(|f| f.get_id() == id) {
-            warn!(
-                "Duplicate feature ID ({}) in layer {}",
-                id,
-                layer.get_name()
-            );
+        if layer.features.iter().any(|f| f.id == Some(id)) {
+            warn!("Duplicate feature ID ({}) in layer {:?}", id, &layer.name);
         }
         self.feature.set_id(id);
     }
 
     /// Get number of tags (count).
     pub fn num_tags(&self) -> usize {
-        self.feature.get_tags().len()
+        self.feature.tags.len()
     }
 
     /// Add a tag of string type.
     pub fn add_tag_string(&mut self, key: &str, val: &str) {
-        let mut value = Tile_Value::new();
+        let mut value = Value::new();
         value.set_string_value(val.to_string());
         self.add_tag(key, value);
     }
 
     /// Add a tag of double type.
     pub fn add_tag_double(&mut self, key: &str, val: f64) {
-        let mut value = Tile_Value::new();
+        let mut value = Value::new();
         value.set_double_value(val);
         self.add_tag(key, value);
     }
 
     /// Add a tag of float type.
     pub fn add_tag_float(&mut self, key: &str, val: f32) {
-        let mut value = Tile_Value::new();
+        let mut value = Value::new();
         value.set_float_value(val);
         self.add_tag(key, value);
     }
 
     /// Add a tag of int type.
     pub fn add_tag_int(&mut self, key: &str, val: i64) {
-        let mut value = Tile_Value::new();
+        let mut value = Value::new();
         value.set_int_value(val);
         self.add_tag(key, value);
     }
 
     /// Add a tag of uint type.
     pub fn add_tag_uint(&mut self, key: &str, val: u64) {
-        let mut value = Tile_Value::new();
+        let mut value = Value::new();
         value.set_uint_value(val);
         self.add_tag(key, value);
     }
 
     /// Add a tag of sint type.
     pub fn add_tag_sint(&mut self, key: &str, val: i64) {
-        let mut value = Tile_Value::new();
+        let mut value = Value::new();
         value.set_sint_value(val);
         self.add_tag(key, value);
     }
 
     /// Add a tag of bool type.
     pub fn add_tag_bool(&mut self, key: &str, val: bool) {
-        let mut value = Tile_Value::new();
+        let mut value = Value::new();
         value.set_bool_value(val);
         self.add_tag(key, value);
     }
 
     /// Add a tag.
-    fn add_tag(&mut self, key: &str, value: Tile_Value) {
+    fn add_tag(&mut self, key: &str, value: Value) {
         let kidx = self.layer.key_pos(key);
-        self.feature.mut_tags().push(kidx as u32);
+        self.feature.tags.push(kidx as u32);
         let vidx = self.layer.val_pos(value);
-        self.feature.mut_tags().push(vidx as u32);
+        self.feature.tags.push(vidx as u32);
     }
 }

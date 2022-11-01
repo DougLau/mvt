@@ -1,8 +1,8 @@
 // error.rs
 //
-// Copyright (c) 2019-2021  Minnesota Department of Transportation
+// Copyright (c) 2019-2022  Minnesota Department of Transportation
 //
-use protobuf::error::ProtobufError;
+use protobuf::Error as ProtobufError;
 
 /// MVT Error types
 #[non_exhaustive]

@@ -14,12 +14,12 @@ edition = "2021"
 log = "0.4"
 num-traits = "0.2"
 pointy = "0.3"
-protobuf = "~2.25"
-protobuf-codegen-pure = { version = "2.25", optional = true }
+protobuf = "~3.2"
+protobuf-codegen = { version = "3.2", optional = true }
 thiserror = "1"
 
 [features]
-update = ["protobuf-codegen-pure"]
+update = ["protobuf-codegen"]
 
 [[bin]]
 # `cargo run --features=update` when updating to a new protobuf version
