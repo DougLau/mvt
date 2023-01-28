@@ -1,5 +1,6 @@
 ## [Unreleased]
 
+## [0.8.0] - 2023-01-28
 ### Added
 * `GeomData::is_empty` / `GeomData::len` methods
 ### Changed
