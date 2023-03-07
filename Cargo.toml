@@ -1,6 +1,6 @@
 [package]
 name = "mvt"
-version = "0.8.0"
+version = "0.8.1"
 description = "A library for encoding mapbox vector tiles"
 license = "MIT OR Apache-2.0"
 documentation = "https://docs.rs/mvt"
@@ -13,7 +13,7 @@ edition = "2021"
 [dependencies]
 log = "0.4"
 num-traits = "0.2"
-pointy = "0.3"
+pointy = "0.4"
 protobuf = "~3.2"
 protobuf-codegen = { version = "3.2", optional = true }
 thiserror = "1"
