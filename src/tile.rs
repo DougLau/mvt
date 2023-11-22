@@ -223,6 +223,11 @@ impl Layer {
         }
     }
 
+    /// Compute the encoded size in bytes.
+    pub fn compute_size(&self) -> usize {
+        self.layer.compute_size() as usize
+    }
+
     /// Get position of a key in the layer keys.  If the key is not found, it
     /// is added as the last key.
     fn key_pos(&mut self, key: &str) -> usize {

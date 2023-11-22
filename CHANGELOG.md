@@ -1,4 +1,6 @@
 ## [Unreleased]
+### Added
+* Add `Layer::compute_size()`
 
 ## [0.8.0] - 2023-01-28
 ### Added
