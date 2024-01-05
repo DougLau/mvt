@@ -1,6 +1,6 @@
 // lib.rs      mvt crate.
 //
-// Copyright (c) 2019-2021  Minnesota Department of Transportation
+// Copyright (c) 2019-2022  Minnesota Department of Transportation
 //
 //! A library for encoding [mapbox vector tiles].
 //!
@@ -41,9 +41,6 @@
 //! [mapbox vector tiles]: https://github.com/mapbox/vector-tile-spec
 //! [tile]: struct.Tile.html
 #![forbid(unsafe_code)]
-
-#[macro_use]
-extern crate log;
 
 mod encoder;
 mod error;

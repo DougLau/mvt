@@ -1,6 +1,6 @@
 // tile.rs
 //
-// Copyright (c) 2019-2022  Minnesota Department of Transportation
+// Copyright (c) 2019-2024  Minnesota Department of Transportation
 //
 //! Tile, Layer and Feature structs.
 //!
@@ -269,7 +269,10 @@ impl Feature {
     pub fn set_id(&mut self, id: u64) {
         let layer = &self.layer.layer;
         if layer.features.iter().any(|f| f.id == Some(id)) {
-            warn!("Duplicate feature ID ({}) in layer {:?}", id, &layer.name);
+            log::warn!(
+                "Duplicate feature ID ({id}) in layer {:?}",
+                &layer.name
+            );
         }
         self.feature.set_id(id);
     }

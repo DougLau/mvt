@@ -1,6 +1,6 @@
 // encoder.rs
 //
-// Copyright (c) 2019-2022  Minnesota Department of Transportation
+// Copyright (c) 2019-2024  Minnesota Department of Transportation
 //
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
@@ -129,7 +129,7 @@ where
     /// Add a Command
     fn command(&mut self, cmd: Command, count: u32) {
         self.cmd_offset = self.data.len();
-        debug!("command: {:?}", &cmd);
+        log::debug!("command: {cmd:?}");
         self.data.push(CommandInt::new(cmd, count).encode());
     }
 
@@ -148,7 +148,7 @@ where
             .push(ParamInt::new(x.saturating_sub(self.x)).encode());
         self.data
             .push(ParamInt::new(y.saturating_sub(self.y)).encode());
-        debug!("point: {},{}", x, y);
+        log::debug!("point: {x},{y}");
         self.x = x;
         self.y = y;
         Ok(())
