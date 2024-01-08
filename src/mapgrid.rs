@@ -1,27 +1,15 @@
 // mapgrid.rs
 //
-// Copyright (c) 2019-2021  Minnesota Department of Transportation
+// Copyright (c) 2019-2024  Minnesota Department of Transportation
 //
 //! TileId and MapGrid structs.
 //!
 use crate::error::{Error, Result};
-use num_traits::FromPrimitive;
-use pointy::{BBox, Float, Pt, Transform};
+use pointy::{BBox, Pt, Transform};
 use std::fmt;
 
-/// Web Mercator map constants
-pub trait MapConst {
-    /// Half size of map (meters)
-    const HALF_SIZE_M: Self;
-}
-
-impl MapConst for f32 {
-    const HALF_SIZE_M: Self = 20_037_508.342_789_248;
-}
-
-impl MapConst for f64 {
-    const HALF_SIZE_M: Self = 20_037_508.342_789_248;
-}
+/// Half size of map (meters)
+const HALF_SIZE_M: f64 = 20_037_508.342_789_248;
 
 /// A tile ID identifies a tile on a map grid at a specific zoom level.
 ///
@@ -43,15 +31,12 @@ pub struct TileId {
 /// [tile]: struct.Tile.html
 /// [Web Mercator]: https://en.wikipedia.org/wiki/Web_Mercator_projection
 #[derive(Clone, Debug)]
-pub struct MapGrid<F>
-where
-    F: Float,
-{
+pub struct MapGrid {
     /// Spatial reference ID
     srid: i32,
 
     /// Bounding box
-    bbox: BBox<F>,
+    bbox: BBox<f64>,
 }
 
 impl TileId {
@@ -100,29 +85,23 @@ impl TileId {
     }
 }
 
-impl<F> Default for MapGrid<F>
-where
-    F: Float + MapConst,
-{
+impl Default for MapGrid {
     fn default() -> Self {
         const WEB_MERCATOR_SRID: i32 = 3857;
         let srid = WEB_MERCATOR_SRID;
-        let p0 = Pt::new(-F::HALF_SIZE_M, -F::HALF_SIZE_M);
-        let p1 = Pt::new(F::HALF_SIZE_M, F::HALF_SIZE_M);
+        let p0 = Pt::new(-HALF_SIZE_M, -HALF_SIZE_M);
+        let p1 = Pt::new(HALF_SIZE_M, HALF_SIZE_M);
         let bbox = BBox::from((p0, p1));
         Self { srid, bbox }
     }
 }
 
-impl<F> MapGrid<F>
-where
-    F: Float + FromPrimitive,
-{
+impl MapGrid {
     /// Create a new map grid.
     ///
     /// * `srid` Spatial reference ID.
     /// * `bbox` Bounding box.
-    pub fn new(srid: i32, bbox: BBox<F>) -> Self {
+    pub fn new(srid: i32, bbox: BBox<f64>) -> Self {
         MapGrid { srid, bbox }
     }
 
@@ -132,34 +111,34 @@ where
     }
 
     /// Get the bounding box of the grid.
-    pub fn bbox(&self) -> BBox<F> {
+    pub fn bbox(&self) -> BBox<f64> {
         self.bbox
     }
 
     /// Get the bounding box of a tile ID.
-    pub fn tile_bbox(&self, tid: TileId) -> BBox<F> {
+    pub fn tile_bbox(&self, tid: TileId) -> BBox<f64> {
         let tx = self.bbox.x_min(); // west edge
         let ty = self.bbox.y_max(); // north edge
         let tz = zoom_scale(tid.z);
         let sx = self.bbox.x_span() * tz;
         let sy = self.bbox.y_span() * tz;
         let t = Transform::with_scale(sx, -sy).translate(tx, ty);
-        let tidx = F::from_u32(tid.x).unwrap();
-        let tidy = F::from_u32(tid.y).unwrap();
+        let tidx = f64::from(tid.x);
+        let tidy = f64::from(tid.y);
         let p0 = t * Pt::new(tidx, tidy);
-        let p1 = t * Pt::new(tidx + F::one(), tidy + F::one());
+        let p1 = t * Pt::new(tidx + 1.0, tidy + 1.0);
         BBox::from((p0, p1))
     }
 
     /// Get the transform to coördinates in 0 to 1 range.
-    pub fn tile_transform(&self, tid: TileId) -> Transform<F> {
+    pub fn tile_transform(&self, tid: TileId) -> Transform<f64> {
         let tx = self.bbox.x_min(); // west edge
         let ty = self.bbox.y_max(); // north edge
-        let tz = F::from_u32(1 << tid.z).unwrap();
+        let tz = f64::from(1 << tid.z);
         let sx = tz / self.bbox.x_span();
         let sy = tz / self.bbox.y_span();
-        let tidx = F::from_u32(tid.x).unwrap();
-        let tidy = F::from_u32(tid.y).unwrap();
+        let tidx = f64::from(tid.x);
+        let tidy = f64::from(tid.y);
         Transform::with_translate(-tx, -ty)
             .scale(sx, -sy)
             .translate(-tidx, -tidy)
@@ -167,11 +146,8 @@ where
 }
 
 /// Calculate scales at one zoom level.
-fn zoom_scale<F>(zoom: u32) -> F
-where
-    F: Float + FromPrimitive,
-{
-    F::one() / F::from_u32(1 << zoom).unwrap()
+fn zoom_scale(zoom: u32) -> f64 {
+    1.0 / f64::from(1 << zoom)
 }
 
 #[cfg(test)]
