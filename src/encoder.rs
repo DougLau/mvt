@@ -122,14 +122,14 @@ where
             y: 0,
             count: 0,
             cmd_offset: 0,
-            data: vec![],
+            data: Vec::new(),
         }
     }
 
     /// Add a Command
     fn command(&mut self, cmd: Command, count: u32) {
+        log::trace!("command: {cmd:?}, count: {count}");
         self.cmd_offset = self.data.len();
-        log::debug!("command: {cmd:?}");
         self.data.push(CommandInt::new(cmd, count).encode());
     }
 
@@ -148,7 +148,7 @@ where
             .push(ParamInt::new(x.saturating_sub(self.x)).encode());
         self.data
             .push(ParamInt::new(y.saturating_sub(self.y)).encode());
-        log::debug!("point: {x},{y}");
+        log::trace!("push_point: {x},{y}");
         self.x = x;
         self.y = y;
         Ok(())
