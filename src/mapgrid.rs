@@ -5,11 +5,9 @@
 //! TileId and MapGrid structs.
 //!
 use crate::error::{Error, Result};
+use crate::geo::WebMercatorPos;
 use pointy::{BBox, Pt, Transform};
 use std::fmt;
-
-/// Half size of map (meters)
-const HALF_SIZE_M: f64 = 20_037_508.342_789_248;
 
 /// A tile ID identifies a tile on a map grid at a specific zoom level.
 ///
@@ -89,9 +87,7 @@ impl Default for MapGrid {
     fn default() -> Self {
         const WEB_MERCATOR_SRID: i32 = 3857;
         let srid = WEB_MERCATOR_SRID;
-        let p0 = Pt::new(-HALF_SIZE_M, -HALF_SIZE_M);
-        let p1 = Pt::new(HALF_SIZE_M, HALF_SIZE_M);
-        let bbox = BBox::from((p0, p1));
+        let bbox = WebMercatorPos::bbox();
         Self { srid, bbox }
     }
 }
@@ -156,7 +152,7 @@ mod test {
 
     #[test]
     fn test_tile_bbox() {
-        let g = MapGrid::<f64>::default();
+        let g = MapGrid::default();
         let tid = TileId::new(0, 0, 0).unwrap();
         let b = g.tile_bbox(tid);
         assert_eq!(b.x_min(), -20037508.3427892480);

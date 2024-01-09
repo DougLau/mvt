@@ -1,6 +1,6 @@
 // lib.rs      mvt crate.
 //
-// Copyright (c) 2019-2022  Minnesota Department of Transportation
+// Copyright (c) 2019-2024  Minnesota Department of Transportation
 //
 //! A library for encoding [mapbox vector tiles].
 //!
@@ -44,11 +44,13 @@
 
 mod encoder;
 mod error;
+mod geo;
 mod mapgrid;
 mod tile;
 mod vector_tile;
 
 pub use crate::encoder::{GeomData, GeomEncoder, GeomType};
 pub use crate::error::Error;
+pub use crate::geo::{Wgs84Pos, WebMercatorPos};
 pub use crate::mapgrid::{MapGrid, TileId};
 pub use crate::tile::{Feature, Layer, Tile};
