@@ -5,8 +5,9 @@
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
 use crate::error::{Error, Result};
-use pointy::{Float, Transform};
+use pointy::{BBox, Float, Transform};
 
+/// Draw commands
 #[derive(Copy, Clone, Debug)]
 enum Command {
     MoveTo = 1,
@@ -14,21 +15,24 @@ enum Command {
     ClosePath = 7,
 }
 
+/// Integer command
 #[derive(Copy, Clone, Debug)]
 struct CommandInt {
     id: Command,
     count: u32,
 }
 
+/// Integer parameter
 #[derive(Copy, Clone, Debug)]
 struct ParamInt {
     value: i32,
 }
 
 /// Geometry types for [Features](struct.Feature.html).
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum GeomType {
     /// Point or multipoint
+    #[default]
     Point,
 
     /// Linestring or Multilinestring
@@ -47,17 +51,19 @@ pub enum GeomType {
 /// # use mvt::{Error, GeomEncoder, GeomType};
 /// # use pointy::Transform;
 /// # fn main() -> Result<(), Error> {
-/// let geom_data = GeomEncoder::new(GeomType::Point, Transform::default())
+/// let geom_data = GeomEncoder::new(GeomType::Point)
 ///     .point(0.0, 0.0)?
 ///     .point(10.0, 0.0)?
 ///     .encode()?;
 /// # Ok(()) }
 /// ```
+#[derive(Default)]
 pub struct GeomEncoder<F>
 where
     F: Float,
 {
     geom_tp: GeomType,
+    bbox: BBox<F>,
     transform: Transform<F>,
     x: i32,
     y: i32,
@@ -75,7 +81,7 @@ where
 /// # use mvt::{Error, GeomEncoder, GeomType};
 /// # use pointy::Transform;
 /// # fn main() -> Result<(), Error> {
-/// let geom_data = GeomEncoder::new(GeomType::Point, Transform::default())
+/// let geom_data = GeomEncoder::new(GeomType::Point)
 ///     .point(0.0, 0.0)?
 ///     .point(10.0, 0.0)?
 ///     .encode()?;
@@ -113,17 +119,23 @@ where
     /// Create a new geometry encoder.
     ///
     /// * `geom_tp` Geometry type.
-    /// * `transform` Transform to apply to geometry.
-    pub fn new(geom_tp: GeomType, transform: Transform<F>) -> Self {
+    pub fn new(geom_tp: GeomType) -> Self {
         GeomEncoder {
             geom_tp,
-            transform,
-            x: 0,
-            y: 0,
-            count: 0,
-            cmd_offset: 0,
-            data: Vec::new(),
+            ..Default::default()
         }
+    }
+
+    /// Add a bounding box
+    pub fn bbox(mut self, bbox: BBox<F>) -> Self {
+        self.bbox = bbox;
+        self
+    }
+
+    /// Add a transform
+    pub fn transform(mut self, transform: Transform<F>) -> Self {
+        self.transform = transform;
+        self
     }
 
     /// Add a Command
@@ -266,7 +278,7 @@ mod test {
     // Examples from MVT spec:
     #[test]
     fn test_point() {
-        let v = GeomEncoder::new(GeomType::Point, Transform::default())
+        let v = GeomEncoder::new(GeomType::Point)
             .point(25.0, 17.0)
             .unwrap()
             .encode()
@@ -277,7 +289,7 @@ mod test {
 
     #[test]
     fn test_multipoint() {
-        let v = GeomEncoder::new(GeomType::Point, Transform::default())
+        let v = GeomEncoder::new(GeomType::Point)
             .point(5.0, 7.0)
             .unwrap()
             .point(3.0, 2.0)
@@ -290,7 +302,7 @@ mod test {
 
     #[test]
     fn test_linestring() {
-        let v = GeomEncoder::new(GeomType::Linestring, Transform::default())
+        let v = GeomEncoder::new(GeomType::Linestring)
             .point(2.0, 2.0)
             .unwrap()
             .point(2.0, 10.0)
@@ -305,7 +317,7 @@ mod test {
 
     #[test]
     fn test_multilinestring() {
-        let v = GeomEncoder::new(GeomType::Linestring, Transform::default())
+        let v = GeomEncoder::new(GeomType::Linestring)
             .point(2.0, 2.0)
             .unwrap()
             .point(2.0, 10.0)
@@ -326,7 +338,7 @@ mod test {
 
     #[test]
     fn test_polygon() {
-        let v = GeomEncoder::new(GeomType::Polygon, Transform::default())
+        let v = GeomEncoder::new(GeomType::Polygon)
             .point(3.0, 6.0)
             .unwrap()
             .point(8.0, 12.0)
@@ -341,7 +353,7 @@ mod test {
 
     #[test]
     fn test_multipolygon() {
-        let v = GeomEncoder::new(GeomType::Polygon, Transform::default())
+        let v = GeomEncoder::new(GeomType::Polygon)
             // positive area => exterior ring
             .point(0.0, 0.0)
             .unwrap()

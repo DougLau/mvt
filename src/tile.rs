@@ -77,7 +77,7 @@ pub struct Layer {
 ///
 /// let tile = Tile::new(4096);
 /// let layer = tile.create_layer("First Layer");
-/// let geom_data = GeomEncoder::new(GeomType::Point, Transform::default())
+/// let geom_data = GeomEncoder::new(GeomType::Point)
 ///     .point(1.0, 2.0)?
 ///     .point(7.0, 6.0)?
 ///     .encode()?;
