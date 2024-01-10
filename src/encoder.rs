@@ -77,6 +77,18 @@ where
     /// Bounding box
     bbox: BBox<F>,
 
+    /// Minimum X value
+    x_min: i32,
+
+    /// Maximum X value
+    x_max: i32,
+
+    /// Minimum Y value
+    y_min: i32,
+
+    /// Maximum Y value
+    y_max: i32,
+
     /// Transform to MVT coordinates
     transform: Transform<F>,
 
@@ -158,16 +170,33 @@ where
         }
     }
 
+    /// Adjust min/max values
+    fn adjust_minmax(mut self) -> Self {
+        if self.bbox != BBox::default() {
+            let p = self.transform * (self.bbox.x_min(), self.bbox.y_min());
+            let x = p.x.round().to_i32().unwrap_or(i32::MIN);
+            let y = p.y.round().to_i32().unwrap_or(i32::MIN);
+            self.x_min = x;
+            self.y_min = y;
+            let p = self.transform * (self.bbox.x_max(), self.bbox.y_max());
+            let x = p.x.round().to_i32().unwrap_or(i32::MAX);
+            let y = p.y.round().to_i32().unwrap_or(i32::MAX);
+            self.x_max = x;
+            self.y_max = y;
+        }
+        self
+    }
+
     /// Add a bounding box
     pub fn bbox(mut self, bbox: BBox<F>) -> Self {
         self.bbox = bbox;
-        self
+        self.adjust_minmax()
     }
 
     /// Add a transform
     pub fn transform(mut self, transform: Transform<F>) -> Self {
         self.transform = transform;
-        self
+        self.adjust_minmax()
     }
 
     /// Add a Command
@@ -186,13 +215,19 @@ where
     /// Push one point with relative coörindates.
     fn push_point(&mut self, x: F, y: F) -> Result<()> {
         let p = self.transform * (x, y);
-        let x = p.x.round().to_i32().ok_or(Error::InvalidValue())?;
-        let y = p.y.round().to_i32().ok_or(Error::InvalidValue())?;
+        let mut x = p.x.round().to_i32().ok_or(Error::InvalidValue())?;
+        let mut y = p.y.round().to_i32().ok_or(Error::InvalidValue())?;
+        if self.x_min < self.x_max {
+            x = x.clamp(self.x_min, self.x_max);
+        }
+        if self.y_min < self.y_max {
+            y = y.clamp(self.y_min, self.y_max);
+        }
+        log::trace!("push_point: {x},{y}");
         self.data
             .push(ParamInt::new(x.saturating_sub(self.x)).encode());
         self.data
             .push(ParamInt::new(y.saturating_sub(self.y)).encode());
-        log::trace!("push_point: {x},{y}");
         self.x = x;
         self.y = y;
         Ok(())
