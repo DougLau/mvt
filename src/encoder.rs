@@ -7,31 +7,40 @@
 use crate::error::{Error, Result};
 use pointy::{BBox, Float, Transform};
 
-/// Draw commands
-#[derive(Copy, Clone, Debug)]
+/// Path commands
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 enum Command {
+    /// Move to new position
     MoveTo = 1,
+
+    /// Line to new position
     LineTo = 2,
+
+    /// Close current path
     ClosePath = 7,
 }
 
 /// Integer command
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 struct CommandInt {
+    /// Path command
     id: Command,
+
+    /// Command count
     count: u32,
 }
 
 /// Integer parameter
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 struct ParamInt {
+    /// Parameter value
     value: i32,
 }
 
 /// Geometry types for [Features](struct.Feature.html).
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum GeomType {
-    /// Point or multipoint
+    /// Point or Multipoint
     #[default]
     Point,
 
@@ -62,13 +71,28 @@ pub struct GeomEncoder<F>
 where
     F: Float,
 {
+    /// Geometry type
     geom_tp: GeomType,
+
+    /// Bounding box
     bbox: BBox<F>,
+
+    /// Transform to MVT coordinates
     transform: Transform<F>,
+
+    /// Current X value
     x: i32,
+
+    /// Current Y value
     y: i32,
+
+    /// Command offset
     cmd_offset: usize,
+
+    /// Count of geometry data
     count: u32,
+
+    /// Encoded geometry data
     data: Vec<u32>,
 }
 
@@ -88,25 +112,33 @@ where
 /// # Ok(()) }
 /// ```
 pub struct GeomData {
+    /// Geometry type
     geom_tp: GeomType,
+
+    /// Encoded geometry data
     data: Vec<u32>,
 }
 
 impl CommandInt {
+    /// Create a new integer command
     fn new(id: Command, count: u32) -> Self {
+        debug_assert!(count <= 0x1FFF_FFFF);
         CommandInt { id, count }
     }
 
+    /// Encode command
     fn encode(&self) -> u32 {
         ((self.id as u32) & 0x7) | (self.count << 3)
     }
 }
 
 impl ParamInt {
+    /// Create a new integer parameter
     fn new(value: i32) -> Self {
         ParamInt { value }
     }
 
+    /// Encode the parameter
     fn encode(&self) -> u32 {
         ((self.value << 1) ^ (self.value >> 31)) as u32
     }
