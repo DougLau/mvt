@@ -92,11 +92,8 @@ where
     /// Transform to MVT coordinates
     transform: Transform<F>,
 
-    /// Current X value
-    x: i32,
-
-    /// Current Y value
-    y: i32,
+    /// Last point
+    last_pt: Option<(i32, i32)>,
 
     /// Command offset
     cmd_offset: usize,
@@ -212,29 +209,45 @@ where
         self.data[off] = CommandInt::new(cmd, count).encode();
     }
 
-    /// Push one point with relative coörindates.
-    fn push_point(&mut self, x: F, y: F) -> Result<()> {
+    /// Make point with tile coörindates.
+    fn make_point(&self, x: F, y: F) -> Result<(i32, i32)> {
         let p = self.transform * (x, y);
         let mut x = p.x.round().to_i32().ok_or(Error::InvalidValue())?;
         let mut y = p.y.round().to_i32().ok_or(Error::InvalidValue())?;
-        if self.x_min < self.x_max {
+        if self.x_min <= self.x_max {
             x = x.clamp(self.x_min, self.x_max);
+        } else {
+            x = x.clamp(self.x_max, self.x_min);
         }
-        if self.y_min < self.y_max {
+        if self.y_min <= self.y_max {
             y = y.clamp(self.y_min, self.y_max);
+        } else {
+            y = y.clamp(self.y_max, self.y_min);
         }
+        Ok((x, y))
+    }
+
+    /// Push one point with relative coörindates.
+    fn push_point(&mut self, x: i32, y: i32) {
         log::trace!("push_point: {x},{y}");
-        self.data
-            .push(ParamInt::new(x.saturating_sub(self.x)).encode());
-        self.data
-            .push(ParamInt::new(y.saturating_sub(self.y)).encode());
-        self.x = x;
-        self.y = y;
-        Ok(())
+        let (px, py) = self.last_pt.unwrap_or((0, 0));
+        self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
+        self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
+        self.last_pt = Some((x, y));
     }
 
     /// Add a point.
     pub fn add_point(&mut self, x: F, y: F) -> Result<()> {
+        if self.count == 0 {
+            self.last_pt = None;
+        }
+        let (x, y) = self.make_point(x, y)?;
+        if let Some((px, py)) = self.last_pt {
+            if x == px && y == py {
+                log::trace!("simplified point: {x},{y}");
+                return Ok(());
+            }
+        }
         match self.geom_tp {
             GeomType::Point => {
                 if self.count == 0 {
@@ -252,7 +265,7 @@ where
                 _ => (),
             },
         }
-        self.push_point(x, y)?;
+        self.push_point(x, y);
         self.count += 1;
         Ok(())
     }
