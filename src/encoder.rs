@@ -166,6 +166,10 @@ where
     pub fn new(geom_tp: GeomType) -> Self {
         GeomEncoder {
             geom_tp,
+            x_min: i32::MIN,
+            x_max: i32::MAX,
+            y_min: i32::MIN,
+            y_max: i32::MAX,
             ..Default::default()
         }
     }
@@ -217,8 +221,8 @@ where
         let p = self.transform * (x, y);
         let mut x = p.x.round().to_i32().ok_or(Error::InvalidValue())?;
         let mut y = p.y.round().to_i32().ok_or(Error::InvalidValue())?;
-        // NOTE: clipping to the bounding box is technically incorrect;
-        //       we should really find the intersection point when crossing it
+        // FIXME: clipping to the bounding box is technically incorrect;
+        //        we should find the intersection point when crossing it
         if self.x_min <= self.x_max {
             x = x.clamp(self.x_min, self.x_max);
         } else {
@@ -272,7 +276,6 @@ where
     pub fn add_point(&mut self, x: F, y: F) -> Result<()> {
         if self.count == 0 {
             self.prev_pt = None;
-            self.pt = None;
         }
         let (x, y) = self.make_point(x, y)?;
         if let Some((px, py)) = self.pt {
