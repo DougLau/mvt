@@ -214,6 +214,8 @@ where
         let p = self.transform * (x, y);
         let mut x = p.x.round().to_i32().ok_or(Error::InvalidValue())?;
         let mut y = p.y.round().to_i32().ok_or(Error::InvalidValue())?;
+        // NOTE: clipping to the bounding box is technically incorrect;
+        //       we should really find the intersection point when crossing it
         if self.x_min <= self.x_max {
             x = x.clamp(self.x_min, self.x_max);
         } else {
@@ -244,7 +246,7 @@ where
         let (x, y) = self.make_point(x, y)?;
         if let Some((px, py)) = self.last_pt {
             if x == px && y == py {
-                log::trace!("simplified point: {x},{y}");
+                log::trace!("redundant point: {x},{y}");
                 return Ok(());
             }
         }
