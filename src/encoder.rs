@@ -92,8 +92,11 @@ where
     /// Transform to MVT coordinates
     transform: Transform<F>,
 
-    /// Last point
-    last_pt: Option<(i32, i32)>,
+    /// Current point
+    pt: Option<(i32, i32)>,
+
+    /// Previous point
+    prev_pt: Option<(i32, i32)>,
 
     /// Command offset
     cmd_offset: usize,
@@ -232,23 +235,55 @@ where
     /// Push one point with relative coörindates.
     fn push_point(&mut self, x: i32, y: i32) {
         log::trace!("push_point: {x},{y}");
-        let (px, py) = self.last_pt.unwrap_or((0, 0));
+        let (px, py) = self.pt.unwrap_or((0, 0));
         self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
         self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
-        self.last_pt = Some((x, y));
+        self.prev_pt = self.pt;
+        self.pt = Some((x, y));
+    }
+
+    /// Overwrite current point.
+    fn should_simplify_point(&self, x: i32, y: i32) -> bool {
+        if let (Some((ppx, ppy)), Some((px, py))) = (self.prev_pt, self.pt) {
+            if ppx == px && px == x {
+                return (ppy < py && py < y) || (ppy > py && py > y);
+            }
+            if ppy == py && py == y {
+                return (ppx < px && px < x) || (ppx > px && px > x);
+            }
+        }
+        false
+    }
+
+    /// Overwrite current point.
+    fn overwrite_point(&mut self, x: i32, y: i32) {
+        log::trace!("overwrite_point: {x},{y}");
+        debug_assert!(self.count > 1);
+        debug_assert!(self.data.len() > 1);
+        // first, remove current point
+        self.data.truncate(self.data.len() - 2);
+        let (px, py) = self.prev_pt.unwrap();
+        self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
+        self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
+        self.pt = Some((x, y));
     }
 
     /// Add a point.
     pub fn add_point(&mut self, x: F, y: F) -> Result<()> {
         if self.count == 0 {
-            self.last_pt = None;
+            self.prev_pt = None;
+            self.pt = None;
         }
         let (x, y) = self.make_point(x, y)?;
-        if let Some((px, py)) = self.last_pt {
+        if let Some((px, py)) = self.pt {
             if x == px && y == py {
                 log::trace!("redundant point: {x},{y}");
                 return Ok(());
             }
+        }
+        if self.should_simplify_point(x, y) {
+            self.overwrite_point(x, y);
+            return Ok(());
         }
         match self.geom_tp {
             GeomType::Point => {
