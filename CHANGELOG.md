@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+## [0.9.0] - 2024-01-11
+### Added
+* Wgs84Pos / WebMercatorPos conversion structs
+* `GeomEncoder::bbox` / `::transform` methods
+### Changed
+* Updated protobuf to v3.3
+### Removed
+* Generic parameter for MapGrid -- always use `f64`
+* Transform parameter from `GeomEncoder::new`
+
 ## [0.8.0] - 2023-01-28
 ### Added
 * `GeomData::is_empty` / `GeomData::len` methods
