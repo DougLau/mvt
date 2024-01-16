@@ -178,15 +178,15 @@ where
     fn adjust_minmax(mut self) -> Self {
         if self.bbox != BBox::default() {
             let p = self.transform * (self.bbox.x_min(), self.bbox.y_min());
-            let x = p.x.round().to_i32().unwrap_or(i32::MIN);
-            let y = p.y.round().to_i32().unwrap_or(i32::MIN);
-            self.x_min = x;
-            self.y_min = y;
+            let x0 = p.x.round().to_i32().unwrap_or(i32::MIN);
+            let y0 = p.y.round().to_i32().unwrap_or(i32::MIN);
             let p = self.transform * (self.bbox.x_max(), self.bbox.y_max());
-            let x = p.x.round().to_i32().unwrap_or(i32::MAX);
-            let y = p.y.round().to_i32().unwrap_or(i32::MAX);
-            self.x_max = x;
-            self.y_max = y;
+            let x1 = p.x.round().to_i32().unwrap_or(i32::MAX);
+            let y1 = p.y.round().to_i32().unwrap_or(i32::MAX);
+            self.x_min = x0.min(x1);
+            self.y_min = y0.min(y1);
+            self.x_max = x0.max(x1);
+            self.y_max = y0.max(y1);
         }
         self
     }
@@ -223,16 +223,8 @@ where
         let mut y = p.y.round().to_i32().ok_or(Error::InvalidValue())?;
         // FIXME: clipping to the bounding box is technically incorrect;
         //        we should find the intersection point when crossing it
-        if self.x_min <= self.x_max {
-            x = x.clamp(self.x_min, self.x_max);
-        } else {
-            x = x.clamp(self.x_max, self.x_min);
-        }
-        if self.y_min <= self.y_max {
-            y = y.clamp(self.y_min, self.y_max);
-        } else {
-            y = y.clamp(self.y_max, self.y_min);
-        }
+        x = x.clamp(self.x_min, self.x_max);
+        y = y.clamp(self.y_min, self.y_max);
         Ok((x, y))
     }
 
