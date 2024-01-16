@@ -142,6 +142,18 @@ impl CommandInt {
     fn encode(&self) -> u32 {
         ((self.id as u32) & 0x7) | (self.count << 3)
     }
+
+    /// Decode command
+    fn decode(code: u32) -> Self {
+        let id = match code & 0x7 {
+            1 => Command::MoveTo,
+            2 => Command::LineTo,
+            7 => Command::ClosePath,
+            _ => panic!("Invalid code: {code}"),
+        };
+        let count = code >> 3;
+        CommandInt { id, count }
+    }
 }
 
 impl ParamInt {
@@ -203,17 +215,19 @@ where
         self.adjust_minmax()
     }
 
-    /// Add a Command
-    fn command(&mut self, cmd: Command, count: u32) {
-        log::trace!("command: {cmd:?}, count: {count}");
+    /// Push a Command
+    fn push_command(&mut self, cmd: Command) {
+        log::trace!("push_command: {cmd:?}");
         self.cmd_offset = self.data.len();
-        self.data.push(CommandInt::new(cmd, count).encode());
+        self.data.push(CommandInt::new(cmd, 1).encode());
     }
 
     /// Set count of the most recent Command.
-    fn set_command(&mut self, cmd: Command, count: u32) {
+    fn set_command_count(&mut self, count: u32) {
         let off = self.cmd_offset;
-        self.data[off] = CommandInt::new(cmd, count).encode();
+        let mut cmd = CommandInt::decode(self.data[off]);
+        cmd.count = count;
+        self.data[off] = cmd.encode();
     }
 
     /// Make point with tile coörindates.
@@ -238,7 +252,7 @@ where
         self.pt = Some((x, y));
     }
 
-    /// Overwrite current point.
+    /// Check if point should be simplified.
     fn should_simplify_point(&self, x: i32, y: i32) -> bool {
         if let (Some((ppx, ppy)), Some((px, py))) = (self.prev_pt, self.pt) {
             if ppx == px && px == x {
@@ -281,19 +295,18 @@ where
             return Ok(());
         }
         match self.geom_tp {
-            GeomType::Point => {
-                if self.count == 0 {
-                    self.command(Command::MoveTo, 1);
-                }
+            GeomType::Point => match self.count {
+                0 => self.push_command(Command::MoveTo),
+                _ => (),
             }
             GeomType::Linestring => match self.count {
-                0 => self.command(Command::MoveTo, 1),
-                1 => self.command(Command::LineTo, 1),
+                0 => self.push_command(Command::MoveTo),
+                1 => self.push_command(Command::LineTo),
                 _ => (),
             },
             GeomType::Polygon => match self.count {
-                0 => self.command(Command::MoveTo, 1),
-                1 => self.command(Command::LineTo, 1),
+                0 => self.push_command(Command::MoveTo),
+                1 => self.push_command(Command::LineTo),
                 _ => (),
             },
         }
@@ -313,17 +326,19 @@ where
         // FIXME: return Error::InvalidGeometry
         //        if "MUST" rules in the spec are violated
         match self.geom_tp {
-            GeomType::Point => (),
+            GeomType::Point => {
+                self.set_command_count(self.count);
+            }
             GeomType::Linestring => {
                 if self.count > 1 {
-                    self.set_command(Command::LineTo, self.count - 1);
+                    self.set_command_count(self.count - 1);
                 }
                 self.count = 0;
             }
             GeomType::Polygon => {
                 if self.count > 1 {
-                    self.set_command(Command::LineTo, self.count - 1);
-                    self.command(Command::ClosePath, 1);
+                    self.set_command_count(self.count - 1);
+                    self.push_command(Command::ClosePath);
                 }
                 self.count = 0;
             }
@@ -341,14 +356,7 @@ where
     pub fn encode(mut self) -> Result<GeomData> {
         // FIXME: return Error::InvalidGeometry
         //        if "MUST" rules in the spec are violated
-        self = if let GeomType::Point = self.geom_tp {
-            if self.count > 1 {
-                self.set_command(Command::MoveTo, self.count);
-            }
-            self
-        } else {
-            self.complete()?
-        };
+        self = self.complete()?;
         Ok(GeomData::new(self.geom_tp, self.data))
     }
 }
