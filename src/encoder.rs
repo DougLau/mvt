@@ -74,9 +74,6 @@ where
     /// Geometry type
     geom_tp: GeomType,
 
-    /// X,Y position at beginning of polygon geometry
-    xy_beg: Option<Pt<F>>,
-
     /// X,Y position at end of linestring/polygon geometry
     xy_end: Option<Pt<F>>,
 
@@ -239,22 +236,8 @@ where
     /// Push one point with relative coörindates.
     fn push_point(&mut self, x: i32, y: i32) {
         log::trace!("push_point: {x},{y}");
-        let (px, py) = self.pt1.unwrap_or((0, 0));
-        self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
-        self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
         self.pt0 = self.pt1;
-        self.pt1 = Some((x, y));
-        self.count += 1;
-    }
-
-    /// Overwrite current point.
-    fn overwrite_point(&mut self, x: i32, y: i32) {
-        log::trace!("overwrite_point: {x},{y}");
-        debug_assert!(self.count > 1);
-        debug_assert!(self.data.len() > 1);
-        // first, remove current point
-        self.data.truncate(self.data.len() - 2);
-        let (px, py) = self.pt0.unwrap();
+        let (px, py) = self.pt0.unwrap_or((0, 0));
         self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
         self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
         self.pt1 = Some((x, y));
@@ -298,15 +281,11 @@ where
                 return Ok(());
             }
         }
-        if self.should_simplify_point(pt.0, pt.1) {
-            self.overwrite_point(pt.0, pt.1);
-            return Ok(());
-        }
         match self.geom_tp {
             GeomType::Point => match self.count {
                 0 => self.push_command(Command::MoveTo),
                 _ => (),
-            }
+            },
             GeomType::Linestring => {
                 match self.count {
                     0 => self.push_command(Command::MoveTo),
@@ -314,20 +293,18 @@ where
                     _ => (),
                 }
                 self.xy_end = Some(Pt::from((x, y)));
-            },
+            }
             GeomType::Polygon => {
                 match self.count {
                     0 => self.push_command(Command::MoveTo),
                     1 => self.push_command(Command::LineTo),
                     _ => (),
                 }
-                if self.xy_beg.is_none() {
-                    self.xy_beg = Some(Pt::from((x, y)));
-                }
                 self.xy_end = Some(Pt::from((x, y)));
             }
         }
         self.push_point(pt.0, pt.1);
+        self.count += 1;
         Ok(())
     }
 
@@ -339,19 +316,6 @@ where
         x = x.clamp(self.x_min, self.x_max);
         y = y.clamp(self.y_min, self.y_max);
         Ok((x, y))
-    }
-
-    /// Check if point should be simplified.
-    fn should_simplify_point(&self, x: i32, y: i32) -> bool {
-        if let (Some((ppx, ppy)), Some((px, py))) = (self.pt0, self.pt1) {
-            if ppx == px && px == x {
-                return (ppy < py && py < y) || (ppy > py && py > y);
-            }
-            if ppy == py && py == y {
-                return (ppx < px && px < x) || (ppx > px && px > x);
-            }
-        }
-        false
     }
 
     /// Complete the current geometry (for multilinestring / multipolygon).
@@ -370,9 +334,6 @@ where
                 }
             }
             GeomType::Polygon => {
-                if let Some(pt) = self.xy_beg {
-                    self.add_boundary_points(pt.x, pt.y)?;
-                }
                 if self.count > 1 {
                     self.set_command_count(self.count - 1);
                     self.push_command(Command::ClosePath);
@@ -381,9 +342,9 @@ where
         }
         // reset linestring / polygon geometry state
         self.count = 0;
-        self.xy_beg = None;
         self.xy_end = None;
         self.pt0 = None;
+        self.pt1 = None;
         Ok(())
     }
 
