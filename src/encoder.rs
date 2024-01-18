@@ -5,7 +5,7 @@
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
 use crate::error::{Error, Result};
-use pointy::{BBox, Float, Transform};
+use pointy::{BBox, Float, Pt, Seg, Transform};
 
 /// Path commands
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -74,6 +74,15 @@ where
     /// Geometry type
     geom_tp: GeomType,
 
+    /// X,Y position at beginning of polygon geometry
+    xy_beg: Option<Pt<F>>,
+
+    /// X,Y position at end of linestring/polygon geometry
+    xy_end: Option<Pt<F>>,
+
+    /// Transform to MVT coordinates
+    transform: Transform<F>,
+
     /// Bounding box
     bbox: BBox<F>,
 
@@ -89,14 +98,11 @@ where
     /// Maximum Y value
     y_max: i32,
 
-    /// Transform to MVT coordinates
-    transform: Transform<F>,
+    /// Previous tile point
+    pt0: Option<(i32, i32)>,
 
-    /// Current point
-    pt: Option<(i32, i32)>,
-
-    /// Previous point
-    prev_pt: Option<(i32, i32)>,
+    /// Current tile point
+    pt1: Option<(i32, i32)>,
 
     /// Command offset
     cmd_offset: usize,
@@ -230,31 +236,114 @@ where
         self.data[off] = cmd.encode();
     }
 
+    /// Push one point with relative coörindates.
+    fn push_point(&mut self, x: i32, y: i32) {
+        log::trace!("push_point: {x},{y}");
+        let (px, py) = self.pt1.unwrap_or((0, 0));
+        self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
+        self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
+        self.pt0 = self.pt1;
+        self.pt1 = Some((x, y));
+        self.count += 1;
+    }
+
+    /// Overwrite current point.
+    fn overwrite_point(&mut self, x: i32, y: i32) {
+        log::trace!("overwrite_point: {x},{y}");
+        debug_assert!(self.count > 1);
+        debug_assert!(self.data.len() > 1);
+        // first, remove current point
+        self.data.truncate(self.data.len() - 2);
+        let (px, py) = self.pt0.unwrap();
+        self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
+        self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
+        self.pt1 = Some((x, y));
+    }
+
+    /// Add a point, taking ownership (for method chaining).
+    pub fn point(mut self, x: F, y: F) -> Result<Self> {
+        self.add_point(x, y)?;
+        Ok(self)
+    }
+
+    /// Add a point.
+    pub fn add_point(&mut self, x: F, y: F) -> Result<()> {
+        self.add_boundary_points(x, y)?;
+        self.add_tile_point(x, y)
+    }
+
+    /// Add one or two boundary points (if needed).
+    fn add_boundary_points(&mut self, x: F, y: F) -> Result<()> {
+        if let Some(pxy) = self.xy_end {
+            let xy = Pt::from((x, y));
+            let seg = Seg::new(pxy, xy);
+            if let Some(seg) = seg.clip(self.bbox) {
+                if seg.p0 != pxy {
+                    self.add_tile_point(seg.p0.x, seg.p0.y)?;
+                }
+                if seg.p1 != xy {
+                    self.add_tile_point(seg.p1.x, seg.p1.y)?;
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Add a tile point.
+    fn add_tile_point(&mut self, x: F, y: F) -> Result<()> {
+        let pt = self.make_point(x, y)?;
+        if let Some((px, py)) = self.pt1 {
+            if pt.0 == px && pt.1 == py {
+                log::trace!("redundant point: {px},{py}");
+                return Ok(());
+            }
+        }
+        if self.should_simplify_point(pt.0, pt.1) {
+            self.overwrite_point(pt.0, pt.1);
+            return Ok(());
+        }
+        match self.geom_tp {
+            GeomType::Point => match self.count {
+                0 => self.push_command(Command::MoveTo),
+                _ => (),
+            }
+            GeomType::Linestring => {
+                match self.count {
+                    0 => self.push_command(Command::MoveTo),
+                    1 => self.push_command(Command::LineTo),
+                    _ => (),
+                }
+                self.xy_end = Some(Pt::from((x, y)));
+            },
+            GeomType::Polygon => {
+                match self.count {
+                    0 => self.push_command(Command::MoveTo),
+                    1 => self.push_command(Command::LineTo),
+                    _ => (),
+                }
+                if self.xy_beg.is_none() {
+                    self.xy_beg = Some(Pt::from((x, y)));
+                }
+                self.xy_end = Some(Pt::from((x, y)));
+            }
+        }
+        self.push_point(pt.0, pt.1);
+        Ok(())
+    }
+
     /// Make point with tile coörindates.
     fn make_point(&self, x: F, y: F) -> Result<(i32, i32)> {
         let p = self.transform * (x, y);
         let mut x = p.x.round().to_i32().ok_or(Error::InvalidValue())?;
         let mut y = p.y.round().to_i32().ok_or(Error::InvalidValue())?;
-        // FIXME: clipping to the bounding box is technically incorrect;
-        //        we should find the intersection point when crossing it
         x = x.clamp(self.x_min, self.x_max);
         y = y.clamp(self.y_min, self.y_max);
         Ok((x, y))
     }
 
-    /// Push one point with relative coörindates.
-    fn push_point(&mut self, x: i32, y: i32) {
-        log::trace!("push_point: {x},{y}");
-        let (px, py) = self.pt.unwrap_or((0, 0));
-        self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
-        self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
-        self.prev_pt = self.pt;
-        self.pt = Some((x, y));
-    }
-
     /// Check if point should be simplified.
     fn should_simplify_point(&self, x: i32, y: i32) -> bool {
-        if let (Some((ppx, ppy)), Some((px, py))) = (self.prev_pt, self.pt) {
+        if let (Some((ppx, ppy)), Some((px, py))) = (self.pt0, self.pt1) {
             if ppx == px && px == x {
                 return (ppy < py && py < y) || (ppy > py && py > y);
             }
@@ -265,62 +354,6 @@ where
         false
     }
 
-    /// Overwrite current point.
-    fn overwrite_point(&mut self, x: i32, y: i32) {
-        log::trace!("overwrite_point: {x},{y}");
-        debug_assert!(self.count > 1);
-        debug_assert!(self.data.len() > 1);
-        // first, remove current point
-        self.data.truncate(self.data.len() - 2);
-        let (px, py) = self.prev_pt.unwrap();
-        self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
-        self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
-        self.pt = Some((x, y));
-    }
-
-    /// Add a point.
-    pub fn add_point(&mut self, x: F, y: F) -> Result<()> {
-        if self.count == 0 {
-            self.prev_pt = None;
-        }
-        let (x, y) = self.make_point(x, y)?;
-        if let Some((px, py)) = self.pt {
-            if x == px && y == py {
-                log::trace!("redundant point: {x},{y}");
-                return Ok(());
-            }
-        }
-        if self.should_simplify_point(x, y) {
-            self.overwrite_point(x, y);
-            return Ok(());
-        }
-        match self.geom_tp {
-            GeomType::Point => match self.count {
-                0 => self.push_command(Command::MoveTo),
-                _ => (),
-            }
-            GeomType::Linestring => match self.count {
-                0 => self.push_command(Command::MoveTo),
-                1 => self.push_command(Command::LineTo),
-                _ => (),
-            },
-            GeomType::Polygon => match self.count {
-                0 => self.push_command(Command::MoveTo),
-                1 => self.push_command(Command::LineTo),
-                _ => (),
-            },
-        }
-        self.push_point(x, y);
-        self.count += 1;
-        Ok(())
-    }
-
-    /// Add a point, taking ownership (for method chaining).
-    pub fn point(mut self, x: F, y: F) -> Result<Self> {
-        self.add_point(x, y)?;
-        Ok(self)
-    }
-
     /// Complete the current geometry (for multilinestring / multipolygon).
     pub fn complete_geom(&mut self) -> Result<()> {
         // FIXME: return Error::InvalidGeometry
@@ -328,21 +361,29 @@ where
         match self.geom_tp {
             GeomType::Point => {
                 self.set_command_count(self.count);
+                // early return skips geometry reset
+                return Ok(());
             }
             GeomType::Linestring => {
                 if self.count > 1 {
                     self.set_command_count(self.count - 1);
                 }
-                self.count = 0;
             }
             GeomType::Polygon => {
+                if let Some(pt) = self.xy_beg {
+                    self.add_boundary_points(pt.x, pt.y)?;
+                }
                 if self.count > 1 {
                     self.set_command_count(self.count - 1);
                     self.push_command(Command::ClosePath);
                 }
-                self.count = 0;
             }
         }
+        // reset linestring / polygon geometry state
+        self.count = 0;
+        self.xy_beg = None;
+        self.xy_end = None;
+        self.pt0 = None;
         Ok(())
     }
 
