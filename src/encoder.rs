@@ -344,7 +344,6 @@ where
         self.count = 0;
         self.xy_end = None;
         self.pt0 = None;
-        self.pt1 = None;
         Ok(())
     }
 
