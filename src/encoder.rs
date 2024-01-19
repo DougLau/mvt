@@ -241,6 +241,16 @@ where
         self.data.push(ParamInt::new(x.saturating_sub(px)).encode());
         self.data.push(ParamInt::new(y.saturating_sub(py)).encode());
         self.pt1 = Some((x, y));
+        self.count += 1;
+    }
+
+    /// Pop most recent point.
+    fn pop_point(&mut self) {
+        log::trace!("pop_point");
+        self.data.pop();
+        self.data.pop();
+        self.pt1 = self.pt0;
+        self.count -= 1;
     }
 
     /// Add a point, taking ownership (for method chaining).
@@ -269,6 +279,12 @@ where
                 }
             }
         }
+        match self.geom_tp {
+            GeomType::Linestring | GeomType::Polygon => {
+                self.xy_end = Some(Pt::from((x, y)));
+            }
+            _ => (),
+        }
         Ok(())
     }
 
@@ -286,25 +302,23 @@ where
                 0 => self.push_command(Command::MoveTo),
                 _ => (),
             },
-            GeomType::Linestring => {
-                match self.count {
-                    0 => self.push_command(Command::MoveTo),
-                    1 => self.push_command(Command::LineTo),
-                    _ => (),
-                }
-                self.xy_end = Some(Pt::from((x, y)));
-            }
+            GeomType::Linestring => match self.count {
+                0 => self.push_command(Command::MoveTo),
+                1 => self.push_command(Command::LineTo),
+                _ => (),
+            },
             GeomType::Polygon => {
                 match self.count {
                     0 => self.push_command(Command::MoveTo),
                     1 => self.push_command(Command::LineTo),
                     _ => (),
                 }
-                self.xy_end = Some(Pt::from((x, y)));
+                if self.count >= 2 && self.should_simplify_point(pt.0, pt.1) {
+                    self.pop_point();
+                }
             }
         }
         self.push_point(pt.0, pt.1);
-        self.count += 1;
         Ok(())
     }
 
@@ -316,6 +330,19 @@ where
         x = x.clamp(self.x_min, self.x_max);
         y = y.clamp(self.y_min, self.y_max);
         Ok((x, y))
+    }
+
+    /// Check if point should be simplified.
+    fn should_simplify_point(&self, x: i32, y: i32) -> bool {
+        if let (Some((p0x, p0y)), Some((p1x, p1y))) = (self.pt0, self.pt1) {
+            if p0x == p1x && p1x == x {
+                return (p0y < p1y && p1y < y) || (p0y > p1y && p1y > y);
+            }
+            if p0y == p1y && p1y == y {
+                return (p0x < p1x && p1x < x) || (p0x > p1x && p1x > x);
+            }
+        }
+        false
     }
 
     /// Complete the current geometry (for multilinestring / multipolygon).
