@@ -298,10 +298,11 @@ where
             }
         }
         match self.geom_tp {
-            GeomType::Point => match self.count {
-                0 => self.push_command(Command::MoveTo),
-                _ => (),
-            },
+            GeomType::Point => {
+                if self.count == 0 {
+                    self.push_command(Command::MoveTo);
+                }
+            }
             GeomType::Linestring => match self.count {
                 0 => self.push_command(Command::MoveTo),
                 1 => self.push_command(Command::LineTo),
