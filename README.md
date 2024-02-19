@@ -1,11 +1,10 @@
 # mvt
-A Rust library for encoding [mapbox vector tiles].  Decoding is not implemented.
+A Rust library for encoding [mapbox vector tiles].  Version 2.1 of the standard
+is supported.  See [documentation] for details.
 
-The [API] is designed to prevent creating files which are not allowed by the
-specification.
-
-Version 2.1 of the standard is supported.
+[earthwyrm-bin] is a tile server using this crate.
 
 
-[API]: https://docs.rs/mvt
+[documentation]: https://docs.rs/mvt
+[earthwyrm-bin]: https://crates.io/crates/earthwyrm-bin
 [mapbox vector tiles]: https://github.com/mapbox/vector-tile-spec
