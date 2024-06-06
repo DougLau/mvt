@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.9.3] - 2024-06-06
+### Changed
+* Updated protobuf to v3.4
+
 ## [0.9.0] - 2024-01-11
 ### Added
 * Wgs84Pos / WebMercatorPos conversion structs
