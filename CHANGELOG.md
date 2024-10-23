@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.9.4] - 2024-10-23
+### Changed
+* Updated protobuf to v3.7
+
 ## [0.9.3] - 2024-06-06
 ### Changed
 * Updated protobuf to v3.4
