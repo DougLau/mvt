@@ -14,8 +14,8 @@ edition = "2021"
 log = "0.4"
 num-traits = "0.2"
 pointy = "0.6"
-protobuf = "~3.4"
-protobuf-codegen = { version = "3.4", optional = true }
+protobuf = "~3.7"
+protobuf-codegen = { version = "3.7", optional = true }
 thiserror = "1"
 
 [features]
