@@ -6,10 +6,10 @@
 //!
 use crate::encoder::{GeomData, GeomType};
 use crate::error::{Error, Result};
+use crate::vector_tile::Tile as VecTile;
 use crate::vector_tile::tile::{
     Feature as VtFeature, GeomType as VtGeomType, Layer as VtLayer, Value,
 };
-use crate::vector_tile::Tile as VecTile;
 use protobuf::{CodedOutputStream, EnumOrUnknown, Message};
 use std::io::Write;
 
