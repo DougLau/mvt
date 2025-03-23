@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.10.0] - 2025-03-15
+### Changed
+* Rust 2024 edition
+* pointy 0.7
+
 ## [0.9.4] - 2024-10-23
 ### Changed
 * Updated protobuf to v3.7
