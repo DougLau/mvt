@@ -1,6 +1,9 @@
 ## [Unreleased]
+
+## [0.10.2] - 2025-06-25
 ### Changed
-* Fix skipped first line segment in multilinestrings when initial point is redundant
+* Fix skipped first line segment in multilinestrings when initial point is
+  redundant
 
 ## [0.10.0] - 2025-03-15
 ### Changed
