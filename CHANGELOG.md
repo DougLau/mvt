@@ -1,9 +1,11 @@
 ## [Unreleased]
 
+## [0.10.3] - 2025-06-25
+### Changed
 * Simplify the initial point redundancy handling logic
 
 ## [0.10.2] - 2025-06-25
-### Changed
+### Fixed
 * Fix skipped first line segment in multilinestrings when initial point is
   redundant
 
