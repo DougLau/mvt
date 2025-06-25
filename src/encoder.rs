@@ -109,6 +109,9 @@ where
 
     /// Encoded geometry data
     data: Vec<u32>,
+
+    /// Flag turning the initial move to into a line to
+    line_to_first_point: bool,
 }
 
 /// Validated geometry data for [Feature](struct.Feature.html)s.
@@ -185,6 +188,7 @@ where
             x_max: i32::MAX,
             y_min: i32::MIN,
             y_max: i32::MAX,
+            line_to_first_point: false,
             ..Default::default()
         }
     }
@@ -293,7 +297,14 @@ where
         let pt = self.make_point(x, y)?;
         if let Some((px, py)) = self.pt1 {
             if pt.0 == px && pt.1 == py {
-                log::trace!("redundant point: {px},{py}");
+                if self.count == 0 {
+                    // If the first point of a line in a multilinestring (or multipolygon) is the same as the last of the previous line,
+                    // we skip the MoveTo command and set a flag so the next point gets a LineTo instead.
+                    self.line_to_first_point = true
+                } else {
+                    // Redundant points other than the first are unexpected, and entirely skipped.
+                    log::trace!("redundant point: {px},{py}");
+                }
                 return Ok(());
             }
         }
@@ -303,18 +314,23 @@ where
                     self.push_command(Command::MoveTo);
                 }
             }
-            GeomType::Linestring => match self.count {
-                0 => self.push_command(Command::MoveTo),
-                1 => self.push_command(Command::LineTo),
-                _ => (),
-            },
-            GeomType::Polygon => {
-                match self.count {
-                    0 => self.push_command(Command::MoveTo),
-                    1 => self.push_command(Command::LineTo),
+            GeomType::Linestring => {
+                match (self.count, self.line_to_first_point) {
+                    (0, false) => self.push_command(Command::MoveTo),
+                    (1, _) | (0, true) => self.push_command(Command::LineTo),
                     _ => (),
                 }
-                if self.count >= 2 && self.should_simplify_point(pt.0, pt.1) {
+            }
+            GeomType::Polygon => {
+                match (self.count, self.line_to_first_point) {
+                    (0, false) => self.push_command(Command::MoveTo),
+                    (1, _) | (0, true) => self.push_command(Command::LineTo),
+                    _ => (),
+                }
+                if (self.count >= 2
+                    || (self.count == 1 && self.line_to_first_point))
+                    && self.should_simplify_point(pt.0, pt.1)
+                {
                     self.pop_point();
                 }
             }
@@ -372,6 +388,7 @@ where
         self.count = 0;
         self.xy_end = None;
         self.pt0 = None;
+        self.line_to_first_point = false;
         Ok(())
     }
 
@@ -483,6 +500,27 @@ mod test {
             .unwrap()
             .into_vec();
         assert_eq!(v, vec!(9, 4, 4, 18, 0, 16, 16, 0, 9, 17, 17, 10, 4, 8));
+    }
+
+    #[test]
+    fn test_multilinestring_skips_redundant_first_point() {
+        let v = GeomEncoder::new(GeomType::Linestring)
+            .point(2.0, 2.0)
+            .unwrap()
+            .point(2.0, 2.0)
+            .unwrap()
+            .point(10.0, 10.0)
+            .unwrap()
+            .complete()
+            .unwrap()
+            .point(10.0, 10.0)
+            .unwrap()
+            .point(13.0, 15.0)
+            .unwrap()
+            .encode()
+            .unwrap()
+            .into_vec();
+        assert_eq!(v, vec!(9, 4, 4, 10, 16, 16, 10, 6, 10));
     }
 
     #[test]
