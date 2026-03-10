@@ -1,6 +1,6 @@
 // encoder.rs
 //
-// Copyright (c) 2019-2024  Minnesota Department of Transportation
+// Copyright (c) 2019-2026  Minnesota Department of Transportation
 //
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
@@ -291,18 +291,22 @@ where
     /// Add a tile point.
     fn add_tile_point(&mut self, x: F, y: F) -> Result<()> {
         let pt = self.make_point(x, y)?;
-        if let Some((px, py)) = self.pt1 {
-            if pt.0 == px && pt.1 == py {
-                if self.count == 0 {
-                    // If the first point of a line in a multilinestring (or multipolygon) is the same as the last of the previous line,
-                    // we skip the MoveTo command and increase the count so the next point correctly gets a LineTo.
-                    self.count += 1;
-                } else {
-                    // Redundant points other than the first are unexpected, and entirely skipped.
-                    log::trace!("redundant point: {px},{py}");
-                }
-                return Ok(());
+        if let Some((px, py)) = self.pt1
+            && pt.0 == px
+            && pt.1 == py
+        {
+            if self.count == 0 {
+                // If the first point of a line in a multilinestring (or
+                // multipolygon) is the same as the last of the previous line,
+                // we skip the MoveTo command and increase the count so the
+                // next point correctly gets a LineTo.
+                self.count += 1;
+            } else {
+                // Redundant points other than the first are unexpected, and
+                // entirely skipped.
+                log::trace!("redundant point: {px},{py}");
             }
+            return Ok(());
         }
         match self.geom_tp {
             GeomType::Point => {
