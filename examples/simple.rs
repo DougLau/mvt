@@ -3,7 +3,8 @@ use mvt::{Error, GeomEncoder, GeomType, Tile};
 fn main() -> Result<(), Error> {
     let mut tile = Tile::new(4096);
     let layer = tile.create_layer("First Layer");
-    // NOTE: normally, the Transform would come from MapGrid::tile_transform
+    // NOTE: normally, the `Transform` would come from
+    //       `squarepeg::MapGrid::transform_peg`
     let b = GeomEncoder::new(GeomType::Linestring)
         .point(0.0, 0.0)?
         .point(1024.0, 0.0)?

@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Removed
+* Moved `geo` and `mapgrid` modules to squarepeg crate
+
 ## [0.10.3] - 2025-06-25
 ### Changed
 * Simplify the initial point redundancy handling logic
