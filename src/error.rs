@@ -1,6 +1,6 @@
 // error.rs
 //
-// Copyright (c) 2019-2022  Minnesota Department of Transportation
+// Copyright (c) 2019-2026  Minnesota Department of Transportation
 //
 use protobuf::Error as ProtobufError;
 
@@ -15,10 +15,6 @@ pub enum Error {
     /// The layer extent does not match the tile extent.
     #[error("Wrong layer extent")]
     WrongExtent(),
-
-    /// The tile ID is invalid.
-    #[error("Invalid tile ID")]
-    InvalidTid(),
 
     /// The geometry does not meet criteria of the specification.
     #[error("Invalid geometry data")]
