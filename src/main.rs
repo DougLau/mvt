@@ -2,10 +2,8 @@
 
 // Update vector tile module to new protobuf version
 fn main() {
-    protobuf_codegen::Codegen::new()
-        .out_dir("src/")
-        .inputs(&["protos/vector_tile.proto"])
-        .include("protos")
-        .run()
+    prost_build::Config::new()
+        .out_dir("src")
+        .compile_protos(&["protos/vector_tile.proto"], &["protos"])
         .expect("Codegen failed");
 }
