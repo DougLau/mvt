@@ -2,7 +2,6 @@
 //
 // Copyright (c) 2019-2026  Minnesota Department of Transportation
 //
-use protobuf::Error as ProtobufError;
 
 /// MVT Error types
 #[non_exhaustive]
@@ -26,7 +25,10 @@ pub enum Error {
 
     /// Error while encoding protobuf data.
     #[error("Protobuf error {0}")]
-    Protobuf(#[from] ProtobufError),
+    Protobuf(#[from] prost::EncodeError),
+
+    #[error("{0}")]
+    Io(#[from] std::io::Error),
 }
 
 /// MVT Result

@@ -14,12 +14,12 @@ edition = "2024"
 log = "0.4"
 num-traits = "0.2"
 pointy = "0.8"
-protobuf = "~3.7"
-protobuf-codegen = { version = "3.7", optional = true }
+prost = "0.14.3"
+prost-build = { version = "0.14.3", optional = true }
 thiserror = "2"
 
 [features]
-update = ["protobuf-codegen"]
+update = ["dep:prost-build"]
 
 [[bin]]
 # `cargo run --features=update` when updating to a new protobuf version

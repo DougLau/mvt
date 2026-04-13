@@ -4,13 +4,14 @@
 //
 //! Tile, Layer and Feature structs.
 //!
+
 use crate::encoder::{GeomData, GeomType};
 use crate::error::{Error, Result};
 use crate::vector_tile::Tile as VecTile;
 use crate::vector_tile::tile::{
     Feature as VtFeature, GeomType as VtGeomType, Layer as VtLayer, Value,
 };
-use protobuf::{CodedOutputStream, EnumOrUnknown, Message};
+use prost::Message;
 use std::io::Write;
 
 /// A tile represents a rectangular region of a map.
@@ -104,7 +105,7 @@ impl Tile {
     ///
     /// * `extent` Height / width of tile bounds.
     pub fn new(extent: u32) -> Self {
-        let vec_tile = VecTile::new();
+        let vec_tile = VecTile::default();
         Tile { vec_tile, extent }
     }
 
@@ -152,29 +153,25 @@ impl Tile {
     /// Write the tile.
     ///
     /// * `out` Writer to output the tile.
-    pub fn write_to(&self, mut out: &mut dyn Write) -> Result<()> {
-        let mut os = CodedOutputStream::new(&mut out);
-        let _ = self.vec_tile.write_to(&mut os);
-        os.flush()?;
+    pub fn write_to(&self, out: &mut dyn Write) -> Result<()> {
+        out.write_all(&self.vec_tile.encode_to_vec())?;
         Ok(())
     }
 
     /// Encode the tile and return the bytes.
     pub fn to_bytes(&self) -> Result<Vec<u8>> {
-        let mut v = Vec::with_capacity(self.compute_size());
-        self.write_to(&mut v)?;
-        Ok(v)
+        Ok(self.vec_tile.encode_to_vec())
     }
 
     /// Compute the encoded size in bytes.
     pub fn compute_size(&self) -> usize {
-        self.vec_tile.compute_size() as usize
+        self.vec_tile.encoded_len()
     }
 }
 
 impl Default for Layer {
     fn default() -> Self {
-        let layer = VtLayer::new();
+        let layer = VtLayer::default();
         Layer { layer }
     }
 }
@@ -185,16 +182,18 @@ impl Layer {
     /// * `name` Layer name.
     /// * `extent` Width / height of tile bounds.
     fn new(name: &str, extent: u32) -> Self {
-        let mut layer = VtLayer::new();
-        layer.set_version(2);
-        layer.set_name(name.to_string());
-        layer.set_extent(extent);
+        let layer = VtLayer {
+            version: 2,
+            name: name.to_string(),
+            extent: Some(extent),
+            ..Default::default()
+        };
         Layer { layer }
     }
 
     /// Get the layer name.
     pub fn name(&self) -> Option<&str> {
-        self.layer.name.as_deref()
+        Some(&self.layer.name)
     }
 
     /// Get number of features (count).
@@ -208,13 +207,15 @@ impl Layer {
     pub fn into_feature(self, geom_data: GeomData) -> Feature {
         let num_keys = self.layer.keys.len();
         let num_values = self.layer.values.len();
-        let mut feature = VtFeature::new();
-        feature.type_ = Some(EnumOrUnknown::new(match geom_data.geom_type() {
-            GeomType::Point => VtGeomType::POINT,
-            GeomType::Linestring => VtGeomType::LINESTRING,
-            GeomType::Polygon => VtGeomType::POLYGON,
-        }));
-        feature.geometry = geom_data.into_vec();
+        let feature = VtFeature {
+            r#type: Some(match geom_data.geom_type() {
+                GeomType::Point => VtGeomType::Point as i32,
+                GeomType::Linestring => VtGeomType::Linestring as i32,
+                GeomType::Polygon => VtGeomType::Polygon as i32,
+            }),
+            geometry: geom_data.into_vec(),
+            ..Default::default()
+        };
         Feature {
             feature,
             layer: self,
@@ -274,7 +275,7 @@ impl Feature {
                 &layer.name
             );
         }
-        self.feature.set_id(id);
+        self.feature.id = Some(id);
     }
 
     /// Get number of tags (count).
@@ -284,50 +285,64 @@ impl Feature {
 
     /// Add a tag of string type.
     pub fn add_tag_string(&mut self, key: &str, val: &str) {
-        let mut value = Value::new();
-        value.set_string_value(val.to_string());
+        let value = Value {
+            string_value: Some(val.to_string()),
+            ..Default::default()
+        };
         self.add_tag(key, value);
     }
 
     /// Add a tag of double type.
     pub fn add_tag_double(&mut self, key: &str, val: f64) {
-        let mut value = Value::new();
-        value.set_double_value(val);
+        let value = Value {
+            double_value: Some(val),
+            ..Default::default()
+        };
         self.add_tag(key, value);
     }
 
     /// Add a tag of float type.
     pub fn add_tag_float(&mut self, key: &str, val: f32) {
-        let mut value = Value::new();
-        value.set_float_value(val);
+        let value = Value {
+            float_value: Some(val),
+            ..Default::default()
+        };
         self.add_tag(key, value);
     }
 
     /// Add a tag of int type.
     pub fn add_tag_int(&mut self, key: &str, val: i64) {
-        let mut value = Value::new();
-        value.set_int_value(val);
+        let value = Value {
+            int_value: Some(val),
+            ..Default::default()
+        };
         self.add_tag(key, value);
     }
 
     /// Add a tag of uint type.
     pub fn add_tag_uint(&mut self, key: &str, val: u64) {
-        let mut value = Value::new();
-        value.set_uint_value(val);
+        let value = Value {
+            uint_value: Some(val),
+            ..Default::default()
+        };
         self.add_tag(key, value);
     }
 
     /// Add a tag of sint type.
     pub fn add_tag_sint(&mut self, key: &str, val: i64) {
-        let mut value = Value::new();
-        value.set_sint_value(val);
+        let value = Value {
+            sint_value: Some(val),
+            ..Default::default()
+        };
         self.add_tag(key, value);
     }
 
     /// Add a tag of bool type.
     pub fn add_tag_bool(&mut self, key: &str, val: bool) {
-        let mut value = Value::new();
-        value.set_bool_value(val);
+        let value = Value {
+            bool_value: Some(val),
+            ..Default::default()
+        };
         self.add_tag(key, value);
     }
 
