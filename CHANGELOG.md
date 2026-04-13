@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+## [0.13.0] - 2026-04-13
+### Changed
+* Migrated from `protobuf` to `prost`
+
+## [0.12.0] - 2026-03-12
 ### Removed
 * Error::InvalidTid (unused)
 
