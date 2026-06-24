@@ -269,11 +269,13 @@ impl Feature {
     /// Set the feature ID.
     pub fn set_id(&mut self, id: u64) {
         let layer = &self.layer.layer;
-        if layer.features.iter().any(|f| f.id == Some(id)) {
-            log::warn!(
-                "Duplicate feature ID ({id}) in layer {:?}",
-                &layer.name
-            );
+        if cfg!(debug_assertions) {
+            if layer.features.iter().any(|f| f.id == Some(id)) {
+                log::warn!(
+                    "Duplicate feature ID ({id}) in layer {:?}",
+                    &layer.name
+                );
+            }
         }
         self.feature.id = Some(id);
     }
