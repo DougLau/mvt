@@ -12,6 +12,7 @@ use crate::vector_tile::tile::{
     Feature as VtFeature, GeomType as VtGeomType, Layer as VtLayer, Value,
 };
 use prost::Message;
+use std::collections::HashMap;
 use std::io::Write;
 
 /// A tile represents a rectangular region of a map.
@@ -47,6 +48,55 @@ pub struct Tile {
     extent: u32,
 }
 
+/// Represents a single MVT attribute value of arbitrary MVT-supported type.
+/// 
+/// This is a internal-only data structure, used as a building block to track unique values in a
+/// layer in order to speed up MVT tile generation for tiles with many different attribute values.
+#[derive(Eq, Hash, PartialEq)]
+enum ValueKey {
+    String(String),
+    Float(u32),
+    Double(u64),
+    Int(i64),
+    Uint(u64),
+    Sint(i64),
+    Bool(bool),
+    Empty,
+}
+
+impl From<&Value> for ValueKey {
+    fn from(value: &Value) -> Self {
+        if let Some(value) = &value.string_value {
+            return Self::String(value.clone());
+        }
+        if let Some(value) = value.float_value {
+            return Self::Float(if value == 0.0 { 0 } else { value.to_bits() });
+        }
+        if let Some(value) = value.double_value {
+            return Self::Double(if value == 0.0 {
+                0
+            } else {
+                value.to_bits()
+            });
+        }
+        if let Some(value) = value.int_value {
+            return Self::Int(value);
+        }
+        if let Some(value) = value.uint_value {
+            return Self::Uint(value);
+        }
+        if let Some(value) = value.sint_value {
+            return Self::Sint(value);
+        }
+        if let Some(value) = value.bool_value {
+            return Self::Bool(value);
+        }
+        Self::Empty
+    }
+}
+
+
+
 /// A layer is a set of related features in a tile.
 ///
 /// # Example
@@ -61,6 +111,8 @@ pub struct Tile {
 /// ```
 pub struct Layer {
     layer: VtLayer,
+    key_indices: HashMap<String, usize>,
+    value_indices: HashMap<ValueKey, usize>,
 }
 
 /// A Feature contains map geometry with related metadata.
@@ -172,7 +224,11 @@ impl Tile {
 impl Default for Layer {
     fn default() -> Self {
         let layer = VtLayer::default();
-        Layer { layer }
+        Layer {
+            layer,
+            key_indices: HashMap::new(),
+            value_indices: HashMap::new(),
+        }
     }
 }
 
@@ -188,7 +244,11 @@ impl Layer {
             extent: Some(extent),
             ..Default::default()
         };
-        Layer { layer }
+        Layer {
+            layer,
+            key_indices: HashMap::new(),
+            value_indices: HashMap::new(),
+        }
     }
 
     /// Get the layer name.
@@ -227,27 +287,27 @@ impl Layer {
     /// Get position of a key in the layer keys.  If the key is not found, it
     /// is added as the last key.
     fn key_pos(&mut self, key: &str) -> usize {
-        self.layer
-            .keys
-            .iter()
-            .position(|k| *k == key)
-            .unwrap_or_else(|| {
-                self.layer.keys.push(key.to_string());
-                self.layer.keys.len() - 1
-            })
+        if let Some(&index) = self.key_indices.get(key) {
+            return index;
+        }
+        let index = self.layer.keys.len();
+        let key = key.to_string();
+        self.layer.keys.push(key.clone());
+        self.key_indices.insert(key, index);
+        index
     }
 
     /// Get position of a value in the layer values.  If the value is not found,
     /// it is added as the last value.
     fn val_pos(&mut self, value: Value) -> usize {
-        self.layer
-            .values
-            .iter()
-            .position(|v| *v == value)
-            .unwrap_or_else(|| {
-                self.layer.values.push(value);
-                self.layer.values.len() - 1
-            })
+        let value_key = ValueKey::from(&value);
+        if let Some(&index) = self.value_indices.get(&value_key) {
+            return index;
+        }
+        let index = self.layer.values.len();
+        self.layer.values.push(value);
+        self.value_indices.insert(value_key, index);
+        index
     }
 }
 
@@ -263,6 +323,12 @@ impl Feature {
         // Reset key/value lengths
         self.layer.layer.keys.truncate(self.num_keys);
         self.layer.layer.values.truncate(self.num_values);
+        // Remove any key/value indices added by this feature, so the
+        // HashMaps stay in sync with the truncated keys/values Vecs.
+        let num_keys = self.num_keys;
+        let num_values = self.num_values;
+        self.layer.key_indices.retain(|_, idx| *idx < num_keys);
+        self.layer.value_indices.retain(|_, idx| *idx < num_values);
         self.layer
     }
 
