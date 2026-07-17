@@ -1,10 +1,9 @@
 // tile.rs
 //
-// Copyright (c) 2019-2024  Minnesota Department of Transportation
+// Copyright (c) 2019-2026  Minnesota Department of Transportation
 //
 //! Tile, Layer and Feature structs.
 //!
-
 use crate::encoder::{GeomData, GeomType};
 use crate::error::{Error, Result};
 use crate::vector_tile::Tile as VecTile;
@@ -49,7 +48,7 @@ pub struct Tile {
 }
 
 /// Represents a single MVT attribute value of arbitrary MVT-supported type.
-/// 
+///
 /// This is a internal-only data structure, used as a building block to track unique values in a
 /// layer in order to speed up MVT tile generation for tiles with many different attribute values.
 #[derive(Eq, Hash, PartialEq)]
@@ -94,8 +93,6 @@ impl From<&Value> for ValueKey {
         Self::Empty
     }
 }
-
-
 
 /// A layer is a set of related features in a tile.
 ///
@@ -335,13 +332,10 @@ impl Feature {
     /// Set the feature ID.
     pub fn set_id(&mut self, id: u64) {
         let layer = &self.layer.layer;
-        if cfg!(debug_assertions) {
-            if layer.features.iter().any(|f| f.id == Some(id)) {
-                log::warn!(
-                    "Duplicate feature ID ({id}) in layer {:?}",
-                    &layer.name
-                );
-            }
+        if cfg!(debug_assertions)
+            && layer.features.iter().any(|f| f.id == Some(id))
+        {
+            log::warn!("Duplicate feature ID ({id}) in layer {:?}", layer.name);
         }
         self.feature.id = Some(id);
     }

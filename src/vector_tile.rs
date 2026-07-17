@@ -12,7 +12,8 @@ pub mod tile {
     pub struct Value {
         /// Exactly one of these values must be present in a valid message
         #[prost(string, optional, tag = "1")]
-        pub string_value: ::core::option::Option<::prost::alloc::string::String>,
+        pub string_value:
+            ::core::option::Option<::prost::alloc::string::String>,
         #[prost(float, optional, tag = "2")]
         pub float_value: ::core::option::Option<f32>,
         #[prost(double, optional, tag = "3")]
@@ -38,7 +39,12 @@ pub mod tile {
         #[prost(uint32, repeated, tag = "2")]
         pub tags: ::prost::alloc::vec::Vec<u32>,
         /// The type of geometry stored in this feature.
-        #[prost(enumeration = "GeomType", optional, tag = "3", default = "Unknown")]
+        #[prost(
+            enumeration = "GeomType",
+            optional,
+            tag = "3",
+            default = "Unknown"
+        )]
         pub r#type: ::core::option::Option<i32>,
         /// Contains a stream of commands and parameters (vertices).
         /// A detailed description on geometry encoding is located in
@@ -81,7 +87,7 @@ pub mod tile {
         Hash,
         PartialOrd,
         Ord,
-        ::prost::Enumeration
+        ::prost::Enumeration,
     )]
     #[repr(i32)]
     pub enum GeomType {
