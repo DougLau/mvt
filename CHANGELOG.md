@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.14.0] - 2026-07-17
+### Changed
+* Performance optimizations
+
 ## [0.13.0] - 2026-04-13
 ### Changed
 * Migrated from `protobuf` to `prost`
