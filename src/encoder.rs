@@ -5,7 +5,8 @@
 //! Encoder for Mapbox Vector Tile (MVT) geometry.
 //!
 use crate::error::{Error, Result};
-use pointy::{BBox, Float, Pt, Seg, Transform};
+use num_traits::ToPrimitive;
+use pointy::{BBox, Bounded, Num, Pt, Seg, Transform};
 
 /// Path commands
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -51,6 +52,107 @@ pub enum GeomType {
     Polygon,
 }
 
+pub trait MvtMaths: Num {
+    fn round_to_i32(self) -> Option<i32>;
+
+    fn clip(seg: Seg<Self>, bbox: BBox<Self>) -> Option<Seg<Self>>;
+}
+
+fn intersect_at_x(p1: Pt<i32>, p2: Pt<i32>, x: i32, a: i32, b: i32) -> Option<Pt<i32>> {
+    let (Pt { x: x1, y: y1 }, Pt { x: x2, y: y2 }) =
+        if p1.x <= p2.x { (p1, p2) } else { (p2, p1) };
+    if x < x1 || x > x2 || x1 == x2 {
+        return None;
+    }
+    if Ord::max(y1, y2) < a || Ord::min(y1, y2) > b {
+        return None;
+    }
+
+    // We are using y = y1 + (y2-y1) * (x-x1)/(x2-x1)
+    let num = (y2 as i64 - y1 as i64) * (x as i64 - x1 as i64);
+    let den = (x2 - x1) as i64;
+    // We are doing "+ den" before dividing to round to the nearest integer (this is +1/2 to the final result)
+    let y = (y1 as i64 + (2 * num + den).div_euclid(2 * den)) as i32;
+
+    if y < a || y > b {
+        return None;
+    }
+    Some(Pt::from((x, y)))
+}
+
+fn intersect_at_y(p1: Pt<i32>, p2: Pt<i32>, y: i32, a: i32, b: i32) -> Option<Pt<i32>> {
+    let swap = |pt: Pt<i32>| {
+        let Pt { x, y } = pt;
+        Pt::from((y, x))
+    };
+    intersect_at_x(swap(p1), swap(p2), y, a, b).map(swap)
+}
+
+impl MvtMaths for i32 {
+    fn round_to_i32(self) -> Option<i32> {
+        Some(self)
+    }
+
+    fn clip(mut seg: Seg<Self>, bbox: BBox<Self>) -> Option<Seg<Self>> {
+        if !seg.bounded_by(bbox) {
+            return None;
+        }
+        if let Some(p) = intersect_at_x(seg.p0, seg.p1, bbox.x_min(), bbox.y_min(), bbox.y_max()) {
+            let xmn = bbox.x_min();
+            if seg.p0.x < xmn {
+                seg.p0 = p;
+            } else if seg.p1.x < xmn {
+                seg.p1 = p;
+            }
+        }
+        if let Some(p) = intersect_at_x(seg.p0, seg.p1, bbox.x_max(), bbox.y_min(), bbox.y_max()) {
+            let xmx = bbox.x_max();
+            if seg.p0.x > xmx {
+                seg.p0 = p;
+            } else if seg.p1.x > xmx {
+                seg.p1 = p;
+            }
+        }
+        if let Some(p) = intersect_at_y(seg.p0, seg.p1, bbox.y_min(), bbox.x_min(), bbox.x_max()) {
+            let ymn = bbox.y_min();
+            if seg.p0.y < ymn {
+                seg.p0 = p;
+            } else if seg.p1.y < ymn {
+                seg.p1 = p;
+            }
+        }
+        if let Some(p) = intersect_at_y(seg.p0, seg.p1, bbox.y_max(), bbox.x_min(), bbox.x_max()) {
+            let ymx = bbox.y_max();
+            if seg.p0.y > ymx {
+                seg.p0 = p;
+            } else if seg.p1.y > ymx {
+                seg.p1 = p;
+            }
+        }
+        Some(seg)
+    }
+}
+
+impl MvtMaths for f64 {
+    fn round_to_i32(self) -> Option<i32> {
+        self.round().to_i32()
+    }
+
+    fn clip(seg: Seg<Self>, bbox: BBox<Self>) -> Option<Seg<Self>> {
+        seg.clip(bbox)
+    }
+}
+
+impl MvtMaths for f32 {
+    fn round_to_i32(self) -> Option<i32> {
+        self.round().to_i32()
+    }
+
+    fn clip(seg: Seg<Self>, bbox: BBox<Self>) -> Option<Seg<Self>> {
+        seg.clip(bbox)
+    }
+}
+
 /// Encoder for [Feature](struct.Feature.html) geometry.
 ///
 /// This can consist of Point, Linestring or Polygon data.
@@ -67,21 +169,21 @@ pub enum GeomType {
 /// # Ok(()) }
 /// ```
 #[derive(Default)]
-pub struct GeomEncoder<F>
+pub struct GeomEncoder<N>
 where
-    F: Float,
+    N: Num + MvtMaths,
 {
     /// Geometry type
     geom_tp: GeomType,
 
     /// X,Y position at end of linestring/polygon geometry
-    xy_end: Option<Pt<F>>,
+    xy_end: Option<Pt<N>>,
 
     /// Transform to MVT coordinates
-    transform: Transform<F>,
+    transform: Transform<N>,
 
     /// Bounding box
-    bbox: BBox<F>,
+    bbox: BBox<N>,
 
     /// Minimum X value
     x_min: i32,
@@ -171,9 +273,9 @@ impl ParamInt {
     }
 }
 
-impl<F> GeomEncoder<F>
+impl<N> GeomEncoder<N>
 where
-    F: Float,
+    N: Num + MvtMaths,
 {
     /// Create a new geometry encoder.
     ///
@@ -193,27 +295,27 @@ where
     fn adjust_minmax(mut self) -> Self {
         if self.bbox != BBox::default() {
             let p = self.transform * (self.bbox.x_min(), self.bbox.y_min());
-            let x0 = p.x.round().to_i32().unwrap_or(i32::MIN);
-            let y0 = p.y.round().to_i32().unwrap_or(i32::MIN);
+            let x0 = p.x.round_to_i32().unwrap_or(i32::MIN);
+            let y0 = p.y.round_to_i32().unwrap_or(i32::MIN);
             let p = self.transform * (self.bbox.x_max(), self.bbox.y_max());
-            let x1 = p.x.round().to_i32().unwrap_or(i32::MAX);
-            let y1 = p.y.round().to_i32().unwrap_or(i32::MAX);
-            self.x_min = x0.min(x1);
-            self.y_min = y0.min(y1);
-            self.x_max = x0.max(x1);
-            self.y_max = y0.max(y1);
+            let x1 = p.x.round_to_i32().unwrap_or(i32::MAX);
+            let y1 = p.y.round_to_i32().unwrap_or(i32::MAX);
+            self.x_min = Ord::min(x0, x1);
+            self.y_min = Ord::min(y0, y1);
+            self.x_max = Ord::max(x0, x1);
+            self.y_max = Ord::max(y0, y1);
         }
         self
     }
 
     /// Add a bounding box
-    pub fn bbox(mut self, bbox: BBox<F>) -> Self {
+    pub fn bbox(mut self, bbox: BBox<N>) -> Self {
         self.bbox = bbox;
         self.adjust_minmax()
     }
 
     /// Add a transform
-    pub fn transform(mut self, transform: Transform<F>) -> Self {
+    pub fn transform(mut self, transform: Transform<N>) -> Self {
         self.transform = transform;
         self.adjust_minmax()
     }
@@ -254,23 +356,23 @@ where
     }
 
     /// Add a point, taking ownership (for method chaining).
-    pub fn point(mut self, x: F, y: F) -> Result<Self> {
+    pub fn point(mut self, x: N, y: N) -> Result<Self> {
         self.add_point(x, y)?;
         Ok(self)
     }
 
     /// Add a point.
-    pub fn add_point(&mut self, x: F, y: F) -> Result<()> {
+    pub fn add_point(&mut self, x: N, y: N) -> Result<()> {
         self.add_boundary_points(x, y)?;
         self.add_tile_point(x, y)
     }
 
     /// Add one or two boundary points (if needed).
-    fn add_boundary_points(&mut self, x: F, y: F) -> Result<()> {
+    fn add_boundary_points(&mut self, x: N, y: N) -> Result<()> {
         if let Some(pxy) = self.xy_end {
             let xy = Pt::from((x, y));
             let seg = Seg::new(pxy, xy);
-            if let Some(seg) = seg.clip(self.bbox) {
+            if let Some(seg) = N::clip(seg, self.bbox) {
                 if seg.p0 != pxy {
                     self.add_tile_point(seg.p0.x, seg.p0.y)?;
                 }
@@ -289,7 +391,7 @@ where
     }
 
     /// Add a tile point.
-    fn add_tile_point(&mut self, x: F, y: F) -> Result<()> {
+    fn add_tile_point(&mut self, x: N, y: N) -> Result<()> {
         let pt = self.make_point(x, y)?;
         if let Some((px, py)) = self.pt1
             && pt.0 == px
@@ -335,12 +437,12 @@ where
     }
 
     /// Make point with tile coörindates.
-    fn make_point(&self, x: F, y: F) -> Result<(i32, i32)> {
+    fn make_point(&self, x: N, y: N) -> Result<(i32, i32)> {
         let p = self.transform * (x, y);
-        let mut x = p.x.round().to_i32().ok_or(Error::InvalidValue())?;
-        let mut y = p.y.round().to_i32().ok_or(Error::InvalidValue())?;
-        x = x.clamp(self.x_min, self.x_max);
-        y = y.clamp(self.y_min, self.y_max);
+        let mut x = p.x.round_to_i32().ok_or(Error::InvalidValue())?;
+        let mut y = p.y.round_to_i32().ok_or(Error::InvalidValue())?;
+        x = Ord::clamp(x, self.x_min, self.x_max);
+        y = Ord::clamp(y, self.y_min, self.y_max);
         Ok((x, y))
     }
 
