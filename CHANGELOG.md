@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+## [0.15.0] - 2026-08-01
+### Added
+* `CoordNum` trait, with support for `i32`
+
 ## [0.14.0] - 2026-07-17
 ### Changed
 * Performance optimizations
