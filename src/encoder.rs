@@ -58,7 +58,14 @@ pub trait MvtMaths: Num {
     fn clip(seg: Seg<Self>, bbox: BBox<Self>) -> Option<Seg<Self>>;
 }
 
-fn intersect_at_x(p1: Pt<i32>, p2: Pt<i32>, x: i32, a: i32, b: i32) -> Option<Pt<i32>> {
+/// Get intersection at X
+fn intersect_at_x(
+    p1: Pt<i32>,
+    p2: Pt<i32>,
+    x: i32,
+    a: i32,
+    b: i32,
+) -> Option<Pt<i32>> {
     let (Pt { x: x1, y: y1 }, Pt { x: x2, y: y2 }) =
         if p1.x <= p2.x { (p1, p2) } else { (p2, p1) };
     if x < x1 || x > x2 || x1 == x2 {
@@ -80,7 +87,14 @@ fn intersect_at_x(p1: Pt<i32>, p2: Pt<i32>, x: i32, a: i32, b: i32) -> Option<Pt
     Some(Pt::from((x, y)))
 }
 
-fn intersect_at_y(p1: Pt<i32>, p2: Pt<i32>, y: i32, a: i32, b: i32) -> Option<Pt<i32>> {
+/// Get intersection at Y
+fn intersect_at_y(
+    p1: Pt<i32>,
+    p2: Pt<i32>,
+    y: i32,
+    a: i32,
+    b: i32,
+) -> Option<Pt<i32>> {
     let swap = |pt: Pt<i32>| {
         let Pt { x, y } = pt;
         Pt::from((y, x))
@@ -97,7 +111,13 @@ impl MvtMaths for i32 {
         if !seg.bounded_by(bbox) {
             return None;
         }
-        if let Some(p) = intersect_at_x(seg.p0, seg.p1, bbox.x_min(), bbox.y_min(), bbox.y_max()) {
+        if let Some(p) = intersect_at_x(
+            seg.p0,
+            seg.p1,
+            bbox.x_min(),
+            bbox.y_min(),
+            bbox.y_max(),
+        ) {
             let xmn = bbox.x_min();
             if seg.p0.x < xmn {
                 seg.p0 = p;
@@ -105,7 +125,13 @@ impl MvtMaths for i32 {
                 seg.p1 = p;
             }
         }
-        if let Some(p) = intersect_at_x(seg.p0, seg.p1, bbox.x_max(), bbox.y_min(), bbox.y_max()) {
+        if let Some(p) = intersect_at_x(
+            seg.p0,
+            seg.p1,
+            bbox.x_max(),
+            bbox.y_min(),
+            bbox.y_max(),
+        ) {
             let xmx = bbox.x_max();
             if seg.p0.x > xmx {
                 seg.p0 = p;
@@ -113,7 +139,13 @@ impl MvtMaths for i32 {
                 seg.p1 = p;
             }
         }
-        if let Some(p) = intersect_at_y(seg.p0, seg.p1, bbox.y_min(), bbox.x_min(), bbox.x_max()) {
+        if let Some(p) = intersect_at_y(
+            seg.p0,
+            seg.p1,
+            bbox.y_min(),
+            bbox.x_min(),
+            bbox.x_max(),
+        ) {
             let ymn = bbox.y_min();
             if seg.p0.y < ymn {
                 seg.p0 = p;
@@ -121,7 +153,13 @@ impl MvtMaths for i32 {
                 seg.p1 = p;
             }
         }
-        if let Some(p) = intersect_at_y(seg.p0, seg.p1, bbox.y_max(), bbox.x_min(), bbox.x_max()) {
+        if let Some(p) = intersect_at_y(
+            seg.p0,
+            seg.p1,
+            bbox.y_max(),
+            bbox.x_min(),
+            bbox.x_max(),
+        ) {
             let ymx = bbox.y_max();
             if seg.p0.y > ymx {
                 seg.p0 = p;
