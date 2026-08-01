@@ -52,9 +52,12 @@ pub enum GeomType {
     Polygon,
 }
 
-pub trait MvtMaths: Num {
+/// Coordinate number
+pub trait CoordNum: Num {
+    /// Round to nearest `i32`
     fn round_to_i32(self) -> Option<i32>;
 
+    /// Clip a segment to a bounding box
     fn clip(seg: Seg<Self>, bbox: BBox<Self>) -> Option<Seg<Self>>;
 }
 
@@ -102,7 +105,7 @@ fn intersect_at_y(
     intersect_at_x(swap(p1), swap(p2), y, a, b).map(swap)
 }
 
-impl MvtMaths for i32 {
+impl CoordNum for i32 {
     fn round_to_i32(self) -> Option<i32> {
         Some(self)
     }
@@ -171,7 +174,7 @@ impl MvtMaths for i32 {
     }
 }
 
-impl MvtMaths for f64 {
+impl CoordNum for f64 {
     fn round_to_i32(self) -> Option<i32> {
         self.round().to_i32()
     }
@@ -181,7 +184,7 @@ impl MvtMaths for f64 {
     }
 }
 
-impl MvtMaths for f32 {
+impl CoordNum for f32 {
     fn round_to_i32(self) -> Option<i32> {
         self.round().to_i32()
     }
@@ -209,7 +212,7 @@ impl MvtMaths for f32 {
 #[derive(Default)]
 pub struct GeomEncoder<N>
 where
-    N: Num + MvtMaths,
+    N: CoordNum,
 {
     /// Geometry type
     geom_tp: GeomType,
@@ -313,7 +316,7 @@ impl ParamInt {
 
 impl<N> GeomEncoder<N>
 where
-    N: Num + MvtMaths,
+    N: CoordNum,
 {
     /// Create a new geometry encoder.
     ///

@@ -48,6 +48,6 @@ mod error;
 mod tile;
 mod vector_tile;
 
-pub use crate::encoder::{GeomData, GeomEncoder, GeomType};
+pub use crate::encoder::{CoordNum, GeomData, GeomEncoder, GeomType};
 pub use crate::error::Error;
 pub use crate::tile::{Feature, Layer, Tile};
